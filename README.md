@@ -8,7 +8,7 @@
 
 TestApp es una aplicaci√≥n de escritorio desarrollada en WPF que permite gestionar mazos de preguntas y realizar ex√°menes interactivos. Dise√±ada para facilitar el estudio mediante la importaci√≥n de preguntas desde archivos PDF y la realizaci√≥n de ex√°menes personalizables.
 
-## ‚ú® Caracter√≠sticas Principales
+## ‚ú?Caracter√≠sticas Principales
 
 ### v1.0.0 - Primera Versi√≥n Estable
 
@@ -56,7 +56,7 @@ TestApp es una aplicaci√≥n de escritorio desarrollada en WPF que permite gestion
 2. Extrae el archivo ZIP en la ubicaci√≥n deseada
 3. Ejecuta `TestApp.Desktop.exe`
 
-## üõ†Ô∏è Tecnolog√≠as Utilizadas
+## üõ†Ô∏?Tecnolog√≠as Utilizadas
 
 - **.NET 8.0** - Framework principal
 - **WPF** - Interfaz de usuario
@@ -100,5 +100,31 @@ Si encuentras alg√∫n error, por favor abre un [issue](https://github.com/jjac10/
 
 ---
 
-**Versi√≥n Actual**: 1.0.0  
+### v2.0.0 - Segunda Versi®Æn
+
+- **Mejoras en la Importaci®Æn de PDF**
+  - Detecci®Æn m®¢s robusta de preguntas, evitando falsos positivos en los n®≤meros de pregunta.
+  - Optimizaci®Æn: el PDF solo se lee una vez por importaci®Æn.
+  - Correcci®Æn de errores en el conteo y extracci®Æn de preguntas.
+
+- **Gesti®Æn de Mazos Mejorada**
+  - Ahora no se pueden crear mazos con nombres duplicados (validaci®Æn case-insensitive).
+  - Mensajes de error claros si el nombre ya existe o est®¢ vac®™o.
+  - Los mensajes de estado aparecen autom®¢ticamente y desaparecen tras unos segundos.
+
+- **Di®¢logos de Confirmaci®Æn Mejorados**
+  - En el di®¢logo de confirmaci®Æn de importaci®Æn de PDF, ahora puedes pulsar **Enter** para confirmar o **Escape** para cancelar.
+  - Mejor accesibilidad y experiencia de usuario en todos los di®¢logos modales.
+
+- **Correcci®Æn de Errores de Persistencia**
+  - Al eliminar archivos o mazos, se eliminan correctamente todas las preguntas, respuestas y estad®™sticas asociadas en la base de datos.
+  - Sincronizaci®Æn total entre la interfaz y la base de datos tras operaciones de borrado.
+
+- **Otras Mejoras**
+  - Mejoras menores de rendimiento y estabilidad.
+  - Mensajes de estado m®¢s claros y ®≤tiles en la interfaz.
+  
+---
+
+**Versi√≥n Actual**: 2.0.0  
 **Fecha de Lanzamiento**: Febrero 2026

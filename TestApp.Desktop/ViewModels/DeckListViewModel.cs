@@ -13,6 +13,7 @@ public partial class DeckListViewModel : ObservableObject
     private readonly IDeckService _deckService;
     private readonly IQuestionService _questionService;
     private readonly IPdfImportService _pdfImportService;
+    private readonly IStatisticsService _statisticsService;
     private Action<ExamViewModel>? _navigateToExamAction;
     private Func<ExamViewModel>? _createExamViewModelFunc;
 
@@ -30,9 +31,6 @@ public partial class DeckListViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
-
-    [ObservableProperty]
-    private int _pdfQuestionCount = 100;
 
     [ObservableProperty]
     private QuestionFile? _selectedFile;
@@ -62,9 +60,15 @@ public partial class DeckListViewModel : ObservableObject
     [ObservableProperty]
     private QuestionFile? _examTargetFile;
 
-    // Diálogo de discrepancia de preguntas PDF (cuando hay MÁS preguntas detectadas)
     [ObservableProperty]
-    private bool _showPdfMismatchDialog;
+    private QuestionFilter _selectedQuestionFilter = QuestionFilter.All;
+
+    [ObservableProperty]
+    private int _availableQuestionsForFilter;
+
+    // Diálogo de confirmación de importación PDF
+    [ObservableProperty]
+    private bool _showPdfConfirmDialog;
 
     [ObservableProperty]
     private int _pdfDetectedQuestions;
@@ -75,12 +79,22 @@ public partial class DeckListViewModel : ObservableObject
     [ObservableProperty]
     private string _pendingPdfFileName = string.Empty;
 
-    // Diálogo de aviso (cuando hay MENOS preguntas detectadas)
+    // Importación múltiple de PDFs
     [ObservableProperty]
-    private bool _showPdfWarningDialog;
+    private ObservableCollection<PdfImportInfo> _pendingPdfImports = [];
 
     [ObservableProperty]
-    private string _warningMessage = string.Empty;
+    private int _totalDetectedQuestions;
+
+    [ObservableProperty]
+    private int _duplicateFilesCount;
+
+    // Diálogo de archivo duplicado
+    [ObservableProperty]
+    private bool _showDuplicateFileDialog;
+
+    [ObservableProperty]
+    private string _duplicateFileName = string.Empty;
 
     // Loading
     [ObservableProperty]
@@ -95,6 +109,12 @@ public partial class DeckListViewModel : ObservableObject
 
     [ObservableProperty]
     private Deck? _deckToDelete;
+
+    [ObservableProperty]
+    private string _deleteDeckConfirmName = string.Empty;
+
+    [ObservableProperty]
+    private string _deleteDeckError = string.Empty;
 
     // Opciones de examen del mazo
     [ObservableProperty]
@@ -112,14 +132,45 @@ public partial class DeckListViewModel : ObservableObject
     [ObservableProperty]
     private bool _deckExamReviewMode = true;
 
+    [ObservableProperty]
+    private QuestionFilter _selectedDeckQuestionFilter = QuestionFilter.All;
+
+    [ObservableProperty]
+    private int _availableDeckQuestionsForFilter;
+
+    // Estadísticas de archivo
+    [ObservableProperty]
+    private bool _showFileStatisticsDialog;
+
+    [ObservableProperty]
+    private FileStatistics? _currentFileStatistics;
+
+    // Estadísticas de mazo
+    [ObservableProperty]
+    private bool _showDeckStatisticsDialog;
+
+    [ObservableProperty]
+    private DeckStatistics? _currentDeckStatistics;
+
+    // Historial de progreso
+    [ObservableProperty]
+    private ProgressHistory? _currentFileProgressHistory;
+
+    [ObservableProperty]
+    private ProgressHistory? _currentDeckProgressHistory;
+
+    private CancellationTokenSource? _statusMessageCts;
+
     public DeckListViewModel(
         IDeckService deckService,
         IQuestionService questionService,
-        IPdfImportService pdfImportService)
+        IPdfImportService pdfImportService,
+        IStatisticsService statisticsService)
     {
         _deckService = deckService;
         _questionService = questionService;
         _pdfImportService = pdfImportService;
+        _statisticsService = statisticsService;
         LoadDecksCommand.Execute(null);
     }
 
@@ -153,9 +204,25 @@ public partial class DeckListViewModel : ObservableObject
     [RelayCommand]
     private async Task CreateDeck()
     {
-        if (string.IsNullOrWhiteSpace(NewDeckName)) return;
+        var trimmedName = NewDeckName.Trim();
 
-        await _deckService.CreateDeckAsync(NewDeckName);
+        if (string.IsNullOrWhiteSpace(trimmedName))
+        {
+            StatusMessage = "⚠️ El nombre del mazo no puede estar vacío.";
+            return;
+        }
+
+        // Verificar si ya existe un mazo con el mismo nombre
+        var existingDeck = Decks.FirstOrDefault(d =>
+            string.Equals(d.Name, trimmedName, StringComparison.OrdinalIgnoreCase));
+
+        if (existingDeck != null)
+        {
+            StatusMessage = $"⚠️ Ya existe un mazo con el nombre '{trimmedName}'.";
+            return;
+        }
+
+        await _deckService.CreateDeckAsync(trimmedName);
         NewDeckName = string.Empty;
         await LoadDecks();
         StatusMessage = "✅ Mazo creado correctamente";
@@ -164,10 +231,12 @@ public partial class DeckListViewModel : ObservableObject
     [RelayCommand]
     private async Task DeleteDeck(Deck deck)
     {
-        // Si el mazo tiene archivos, pedir confirmación
+        // Si el mazo tiene archivos, pedir confirmación con validación de nombre
         if (deck.Files.Count > 0)
         {
             DeckToDelete = deck;
+            DeleteDeckConfirmName = string.Empty;
+            DeleteDeckError = string.Empty;
             ShowDeleteDeckDialog = true;
         }
         else
@@ -191,6 +260,13 @@ public partial class DeckListViewModel : ObservableObject
     {
         if (DeckToDelete == null) return;
 
+        // Validar que el nombre coincida
+        if (!string.Equals(DeleteDeckConfirmName?.Trim(), DeckToDelete.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            DeleteDeckError = "El nombre no coincide. Escribe el nombre exacto del mazo.";
+            return;
+        }
+
         ShowDeleteDeckDialog = false;
         await _deckService.DeleteDeckAsync(DeckToDelete.Id);
 
@@ -203,6 +279,8 @@ public partial class DeckListViewModel : ObservableObject
         await LoadDecks();
         StatusMessage = $"🗑️ Mazo '{DeckToDelete.Name}' eliminado";
         DeckToDelete = null;
+        DeleteDeckConfirmName = string.Empty;
+        DeleteDeckError = string.Empty;
     }
 
     [RelayCommand]
@@ -210,6 +288,8 @@ public partial class DeckListViewModel : ObservableObject
     {
         ShowDeleteDeckDialog = false;
         DeckToDelete = null;
+        DeleteDeckConfirmName = string.Empty;
+        DeleteDeckError = string.Empty;
     }
 
     [RelayCommand]
@@ -217,47 +297,46 @@ public partial class DeckListViewModel : ObservableObject
     {
         if (SelectedDeck == null || file == null) return;
 
+        var deckId = SelectedDeck.Id;
+        var fileName = file.Name;
+        
         // Borrar en BD
         await _questionService.DeleteFileAsync(file.Id);
 
-        // Quitar de la lista mostrada a la derecha (SelectedDeckFiles)
-        var toRemove = SelectedDeckFiles?.FirstOrDefault(f => f.Id == file.Id);
-        if (toRemove != null)
-        {
-            SelectedDeckFiles.Remove(toRemove);
-        }
+        // Recargar todos los datos frescos de la BD
+        SelectedDeck = null;
+        await LoadDecks();
+        
+        // Re-seleccionar el mazo
+        SelectedDeck = Decks.FirstOrDefault(d => d.Id == deckId);
 
-        // Forzar actualización del mazo en la lista principal:
-        // reemplazamos la instancia del Deck en 'Decks' por una nueva copia sin el archivo eliminado.
-        var deckIndex = Decks?.Select((d, i) => (deck: d, index: i)).FirstOrDefault(x => x.deck.Id == SelectedDeck.Id).index ?? -1;
-        if (deckIndex >= 0)
-        {
-            var old = Decks[deckIndex];
-            var newDeck = new Deck
-            {
-                Id = old.Id,
-                Name = old.Name,
-                CreatedAt = old.CreatedAt,
-                Files = old.Files.Where(f => f.Id != file.Id).ToList()
-            };
-
-            Decks[deckIndex] = newDeck;
-
-            // Si el mazo actual era el seleccionado, actualizamos la referencia para que se reevalúen bindings relacionados
-            SelectedDeck = newDeck;
-        }
-
-        StatusMessage = $"🗑️ Archivo '{file.Name}' eliminado";
+        StatusMessage = $"🗑️ Archivo '{fileName}' eliminado";
     }
 
     [RelayCommand]
-    private void ShowExamOptionsDialog(QuestionFile file)
+    private async Task ShowExamOptionsDialog(QuestionFile file)
     {
         ExamTargetFile = file;
-        RandomQuestions = true;
+        RandomQuestions = false;
         RandomAnswers = false;
         ReviewMode = true;
+        SelectedQuestionFilter = QuestionFilter.All;
+        AvailableQuestionsForFilter = file.Questions.Count;
         ShowExamOptions = true;
+        
+        // Cargar conteo inicial
+        await UpdateAvailableQuestionsCount();
+    }
+
+    partial void OnSelectedQuestionFilterChanged(QuestionFilter value)
+    {
+        _ = UpdateAvailableQuestionsCount();
+    }
+
+    private async Task UpdateAvailableQuestionsCount()
+    {
+        if (ExamTargetFile == null) return;
+        AvailableQuestionsForFilter = await _questionService.CountQuestionsInFileAsync(ExamTargetFile.Id, SelectedQuestionFilter);
     }
 
     [RelayCommand]
@@ -271,12 +350,17 @@ public partial class DeckListViewModel : ObservableObject
     private async Task StartExamWithOptions()
     {
         if (ExamTargetFile == null || _createExamViewModelFunc == null || _navigateToExamAction == null) return;
+        if (AvailableQuestionsForFilter == 0)
+        {
+            StatusMessage = "⚠️ No hay preguntas disponibles con el filtro seleccionado";
+            return;
+        }
 
         var examVm = _createExamViewModelFunc();
         await examVm.StartExamFromFileAsync(
             ExamTargetFile.Id, 
-            ExamTargetFile.Questions.Count, 
-            QuestionFilter.All,
+            AvailableQuestionsForFilter, 
+            SelectedQuestionFilter,
             RandomQuestions,
             RandomAnswers,
             ReviewMode);
@@ -338,115 +422,119 @@ public partial class DeckListViewModel : ObservableObject
         var dialog = new OpenFileDialog
         {
             Filter = "Archivos PDF (*.pdf)|*.pdf",
-            Title = "Seleccionar archivo PDF de preguntas"
+            Title = "Seleccionar archivos PDF de preguntas",
+            Multiselect = true
         };
 
         if (dialog.ShowDialog() == true)
         {
-            try
-            {
-                IsLoading = true;
-                LoadingMessage = "Analizando PDF...";
-                StatusMessage = "⏳ Analizando PDF...";
-                
-                var detectedCount = await _pdfImportService.CountQuestionsInPdfAsync(dialog.FileName);
-
-                IsLoading = false;
-
-                if (detectedCount < PdfQuestionCount)
-                {
-                    // Caso 1: Detectadas MENOS de las configuradas -> Importar las detectadas y avisar
-                    PendingPdfPath = dialog.FileName;
-                    PendingPdfFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
-                    PdfDetectedQuestions = detectedCount;
-                    WarningMessage = $"Se han detectado solo {detectedCount} preguntas de las {PdfQuestionCount} configuradas. Se importarán las {detectedCount} preguntas encontradas.";
-                    ShowPdfWarningDialog = true;
-                }
-                else if (detectedCount > PdfQuestionCount)
-                {
-                    // Caso 2: Detectadas MÁS de las configuradas -> Mostrar diálogo de elección
-                    PendingPdfPath = dialog.FileName;
-                    PendingPdfFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
-                    PdfDetectedQuestions = detectedCount;
-                    ShowPdfMismatchDialog = true;
-                    StatusMessage = $"⚠️ Se detectaron {detectedCount} preguntas, pero configuraste {PdfQuestionCount}";
-                }
-                else
-                {
-                    // Caso 3: Coinciden exactamente -> Importar directamente
-                    await ImportPdfWithCount(dialog.FileName, PdfQuestionCount);
-                }
-            }
-            catch (Exception ex)
-            {
-                IsLoading = false;
-                StatusMessage = $"❌ Error al importar: {ex.Message}";
-            }
+            await AnalyzeMultiplePdfsAndShowConfirmDialog(dialog.FileNames);
         }
     }
 
-    [RelayCommand]
-    private async Task ImportDetectedQuestions()
-    {
-        ShowPdfMismatchDialog = false;
-        await ImportPdfWithCount(PendingPdfPath, PdfDetectedQuestions);
-    }
-
-    [RelayCommand]
-    private async Task ImportConfiguredQuestions()
-    {
-        ShowPdfMismatchDialog = false;
-        await ImportPdfWithCount(PendingPdfPath, PdfQuestionCount);
-    }
-
-    [RelayCommand]
-    private void CancelPdfImport()
-    {
-        ShowPdfMismatchDialog = false;
-        PendingPdfPath = string.Empty;
-        PendingPdfFileName = string.Empty;
-        StatusMessage = "❌ Importación cancelada";
-    }
-
-    [RelayCommand]
-    private async Task AcceptWarningAndImport()
-    {
-        ShowPdfWarningDialog = false;
-        await ImportPdfWithCount(PendingPdfPath, PdfDetectedQuestions);
-    }
-
-    [RelayCommand]
-    private void CancelWarning()
-    {
-        ShowPdfWarningDialog = false;
-        PendingPdfPath = string.Empty;
-        PendingPdfFileName = string.Empty;
-        StatusMessage = "❌ Importación cancelada";
-    }
-
-    private async Task ImportPdfWithCount(string pdfPath, int questionCount)
+    private async Task AnalyzeMultiplePdfsAndShowConfirmDialog(string[] filePaths)
     {
         try
         {
             IsLoading = true;
-            LoadingMessage = $"Importando {questionCount} preguntas...";
-            
-            var fileName = Path.GetFileNameWithoutExtension(pdfPath);
-            StatusMessage = $"⏳ Procesando PDF ({questionCount} preguntas)...";
-            
-            var questions = await _pdfImportService.ExtractQuestionsFromPdfAsync(pdfPath, questionCount);
-            
-            LoadingMessage = "Guardando en la base de datos...";
-            var count = await _questionService.ImportQuestionsAsync(SelectedDeck!.Id, fileName, questions);
-            
+            PendingPdfImports.Clear();
+            TotalDetectedQuestions = 0;
+            DuplicateFilesCount = 0;
+
+            for (int i = 0; i < filePaths.Length; i++)
+            {
+                var filePath = filePaths[i];
+                var fileName = Path.GetFileNameWithoutExtension(filePath);
+                LoadingMessage = $"Analizando PDF {i + 1} de {filePaths.Length}: {fileName}...";
+
+                var isDuplicate = SelectedDeckFiles.Any(f =>
+                    string.Equals(f.Name, fileName, StringComparison.OrdinalIgnoreCase));
+
+                var detectedCount = 0;
+                if (!isDuplicate)
+                {
+                    detectedCount = await _pdfImportService.CountQuestionsInPdfAsync(filePath);
+                    TotalDetectedQuestions += detectedCount;
+                }
+                else
+                {
+                    DuplicateFilesCount++;
+                }
+
+                PendingPdfImports.Add(new PdfImportInfo
+                {
+                    FilePath = filePath,
+                    FileName = fileName,
+                    DetectedQuestions = detectedCount,
+                    IsDuplicate = isDuplicate
+                });
+            }
+
+            IsLoading = false;
+
+            // Solo mostrar diálogo si hay archivos válidos para importar
+            if (PendingPdfImports.Any(p => !p.IsDuplicate))
+            {
+                ShowPdfConfirmDialog = true;
+            }
+            else
+            {
+                StatusMessage = "⚠️ Todos los archivos seleccionados ya existen en el mazo";
+                PendingPdfImports.Clear();
+            }
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            StatusMessage = $"❌ Error al analizar: {ex.Message}";
+            PendingPdfImports.Clear();
+        }
+    }
+
+    [RelayCommand]
+    private void CloseDuplicateFileDialog()
+    {
+        ShowDuplicateFileDialog = false;
+        DuplicateFileName = string.Empty;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmPdfImport()
+    {
+        ShowPdfConfirmDialog = false;
+
+        var validImports = PendingPdfImports.Where(p => !p.IsDuplicate).ToList();
+        var importedCount = 0;
+        var totalQuestions = 0;
+
+        try
+        {
+            IsLoading = true;
+
+            for (int i = 0; i < validImports.Count; i++)
+            {
+                var pdfInfo = validImports[i];
+                LoadingMessage = $"Importando {i + 1} de {validImports.Count}: {pdfInfo.FileName}...";
+
+                var questions = await _pdfImportService.ExtractQuestionsFromPdfAsync(
+                    pdfInfo.FilePath, pdfInfo.DetectedQuestions);
+
+                var count = await _questionService.ImportQuestionsAsync(
+                    SelectedDeck!.Id, pdfInfo.FileName, questions);
+
+                totalQuestions += count;
+                importedCount++;
+            }
+
+            // Recargar UI
             LoadingMessage = "Actualizando interfaz...";
-            var deckId = SelectedDeck.Id;
+            var deckId = SelectedDeck!.Id;
             SelectedDeck = null;
             await LoadDecks();
             SelectedDeck = Decks.FirstOrDefault(d => d.Id == deckId);
-            
+
             IsLoading = false;
-            StatusMessage = $"✅ Archivo '{fileName}' importado correctamente ({count} preguntas)";
+            StatusMessage = $"✅ {importedCount} archivo(s) importado(s) ({totalQuestions} preguntas en total)";
         }
         catch (Exception ex)
         {
@@ -455,13 +543,26 @@ public partial class DeckListViewModel : ObservableObject
         }
         finally
         {
-            PendingPdfPath = string.Empty;
-            PendingPdfFileName = string.Empty;
+            PendingPdfImports.Clear();
+            TotalDetectedQuestions = 0;
+            DuplicateFilesCount = 0;
         }
     }
 
     [RelayCommand]
-    private void StartDeckExam()
+    private void CancelPdfImport()
+    {
+        ShowPdfConfirmDialog = false;
+        PendingPdfImports.Clear();
+        TotalDetectedQuestions = 0;
+        DuplicateFilesCount = 0;
+        PendingPdfPath = string.Empty;
+        PendingPdfFileName = string.Empty;
+        StatusMessage = "❌ Importación cancelada";
+    }
+
+    [RelayCommand]
+    private async Task StartDeckExam()
     {
         if (SelectedDeck == null || !SelectedDeckFiles.Any()) return;
         if (_createExamViewModelFunc == null || _navigateToExamAction == null) return;
@@ -469,21 +570,46 @@ public partial class DeckListViewModel : ObservableObject
         var totalQuestions = SelectedDeckFiles.Sum(f => f.Questions.Count);
         DeckExamQuestionCount = totalQuestions;
         DeckExamReviewMode = true;
+        SelectedDeckQuestionFilter = QuestionFilter.All;
+        AvailableDeckQuestionsForFilter = totalQuestions;
         ShowDeckExamOptions = true;
+        
+        // Cargar conteo inicial
+        await UpdateAvailableDeckQuestionsCount();
+    }
+
+    partial void OnSelectedDeckQuestionFilterChanged(QuestionFilter value)
+    {
+        _ = UpdateAvailableDeckQuestionsCount();
+    }
+
+    private async Task UpdateAvailableDeckQuestionsCount()
+    {
+        if (SelectedDeck == null) return;
+        AvailableDeckQuestionsForFilter = await _questionService.CountQuestionsInDeckAsync(SelectedDeck.Id, SelectedDeckQuestionFilter);
+        // Actualizar el conteo máximo si cambia el filtro
+        if (DeckExamQuestionCount > AvailableDeckQuestionsForFilter)
+        {
+            DeckExamQuestionCount = AvailableDeckQuestionsForFilter;
+        }
     }
 
     [RelayCommand]
     private async Task StartDeckExamWithOptions()
     {
         if (SelectedDeck == null || _createExamViewModelFunc == null || _navigateToExamAction == null) return;
+        if (AvailableDeckQuestionsForFilter == 0)
+        {
+            StatusMessage = "⚠️ No hay preguntas disponibles con el filtro seleccionado";
+            return;
+        }
 
         ShowDeckExamOptions = false;
         var examVm = _createExamViewModelFunc();
-        // El examen del mazo siempre tiene preguntas y respuestas aleatorias
         await examVm.StartExamAsync(
             SelectedDeck.Id,
-            DeckExamQuestionCount,
-            QuestionFilter.All,
+            Math.Min(DeckExamQuestionCount, AvailableDeckQuestionsForFilter),
+            SelectedDeckQuestionFilter,
             randomQuestions: true,
             randomAnswers: true,
             DeckExamReviewMode);
@@ -495,6 +621,74 @@ public partial class DeckListViewModel : ObservableObject
     private void CancelDeckExamOptions()
     {
         ShowDeckExamOptions = false;
+    }
+
+    [RelayCommand]
+    private async Task ShowFileStatistics(QuestionFile file)
+    {
+        if (file == null) return;
+        
+        IsLoading = true;
+        LoadingMessage = "Cargando estadísticas...";
+        
+        CurrentFileStatistics = await _statisticsService.GetFileStatisticsAsync(file.Id);
+        CurrentFileProgressHistory = await _statisticsService.GetFileProgressHistoryAsync(file.Id, 14);
+        
+        IsLoading = false;
+        ShowFileStatisticsDialog = true;
+    }
+
+    [RelayCommand]
+    private void CloseFileStatistics()
+    {
+        ShowFileStatisticsDialog = false;
+        CurrentFileStatistics = null;
+        CurrentFileProgressHistory = null;
+    }
+
+    [RelayCommand]
+    private async Task ShowDeckStatistics()
+    {
+        if (SelectedDeck == null) return;
+        
+        IsLoading = true;
+        LoadingMessage = "Cargando estadísticas del mazo...";
+        
+        CurrentDeckStatistics = await _statisticsService.GetDeckStatisticsAsync(SelectedDeck.Id);
+        CurrentDeckProgressHistory = await _statisticsService.GetDeckProgressHistoryAsync(SelectedDeck.Id, 14);
+        
+        IsLoading = false;
+        ShowDeckStatisticsDialog = true;
+    }
+
+    [RelayCommand]
+    private void CloseDeckStatistics()
+    {
+        ShowDeckStatisticsDialog = false;
+        CurrentDeckStatistics = null;
+        CurrentDeckProgressHistory = null;
+    }
+
+    partial void OnStatusMessageChanged(string value)
+    {
+        // Si el mensaje está vacío, no hacemos nada
+        if (string.IsNullOrWhiteSpace(value)) return;
+
+        // Cancelar cualquier temporizador anterior
+        _statusMessageCts?.Cancel();
+        _statusMessageCts = new CancellationTokenSource();
+        var token = _statusMessageCts.Token;
+
+        // Limpiar el mensaje después de 5 segundos
+        Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(5000, token);
+                StatusMessage = string.Empty;
+            }
+            catch (TaskCanceledException) { }
+        }, token);
     }
 }
 

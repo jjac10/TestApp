@@ -7,112 +7,381 @@
         <!-- Contenido principal -->
         <Grid Margin="20" IsEnabled="{Binding IsLoading, Converter={StaticResource BoolInverseConverter}}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="280" MinWidth="250" MaxWidth="350"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left Panel: Deck List -->
-            <Border Grid.Column="0" Background="#F5F5F5" CornerRadius="8" Padding="15" Margin="0,0,10,0">
-                <StackPanel>
-                    <TextBlock Text="Mis Mazos" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+            <!-- Left Panel: Deck List (más compacto) -->
+            <Border Grid.Column="0" Background="#FAFAFA" CornerRadius="12" Margin="0,0,10,0"
+                    BorderBrush="#E0E0E0" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Border Grid.Row="0" Background="#3F51B5" CornerRadius="12,12,0,0" Padding="15,12">
+                        <TextBlock Text="📚 Mis Mazos" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                    </Border>
 
                     <!-- Create new deck -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                        <TextBox Text="{Binding NewDeckName, UpdateSourceTrigger=PropertyChanged}" 
-                                 Width="200" Padding="8" VerticalContentAlignment="Center"/>
-                        <Button Content="➕ Crear Mazo" Margin="10,0,0,0" Padding="10,8"
-                                Command="{Binding CreateDeckCommand}"/>
-                    </StackPanel>
+                    <Border Grid.Row="1" Padding="12,10" Background="#F5F5F5">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding NewDeckName, UpdateSourceTrigger=PropertyChanged}" 
+                                         Padding="8,6" VerticalContentAlignment="Center"
+                                         FontSize="12">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding CreateDeckCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                                <Button Grid.Column="1" Content="➕" Margin="8,0,0,0" Padding="10,6"
+                                        ToolTip="Crear nuevo mazo"
+                                        Command="{Binding CreateDeckCommand}"
+                                        Background="#4CAF50" Foreground="White" FontWeight="Bold"
+                                        BorderThickness="0"/>
+                            </Grid>
+                            <!-- Mensaje de error debajo del textbox -->
+                            <TextBlock Text="{Binding StatusMessage}" 
+                                       Foreground="#F44336" 
+                                       FontWeight="SemiBold"
+                                       FontSize="13"
+                                       Margin="2,4,2,0"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </Border>
 
-                    <!-- Deck list -->
-                    <ListBox ItemsSource="{Binding Decks}" 
+                    <!-- Deck list con archivos visibles -->
+                    <ListBox Grid.Row="2" ItemsSource="{Binding Decks}" 
                              SelectedItem="{Binding SelectedDeck}"
-                             Height="350" BorderThickness="0" Background="Transparent">
+                             BorderThickness="0" Background="Transparent"
+                             Padding="8" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0,0,0,6"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Bd" Background="White" CornerRadius="8" 
+                                                    BorderBrush="#E8E8E8" BorderThickness="1"
+                                                    Padding="10">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#2196F3"/>
+                                                    <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#F5F5F5"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="White" CornerRadius="5" Padding="10" Margin="0,2">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
-                                            <TextBlock Text="{Binding Files.Count, StringFormat='{}{0} archivos'}" 
-                                                       Foreground="Gray" FontSize="12"/>
-                                        </StackPanel>
-                                        <Button Grid.Column="1" Content="🗑️" 
-                                                Command="{Binding DataContext.DeleteDeckCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                CommandParameter="{Binding}"
-                                                Background="Transparent" BorderThickness="0"/>
-                                    </Grid>
-                                </Border>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Nombre del mazo y contador -->
+                                    <StackPanel Grid.Row="0" Grid.Column="0">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Foreground="#757575" FontSize="11" Margin="0,2,0,0">
+                                            <Run Text="{Binding Files.Count, Mode=OneWay}"/>
+                                            <Run Text=" archivo(s)"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    
+                                    <!-- Botón eliminar -->
+                                    <Button Grid.Row="0" Grid.Column="1" Content="🗑️" 
+                                            VerticalAlignment="Top"
+                                            Command="{Binding DataContext.DeleteDeckCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent" BorderThickness="0" 
+                                            FontSize="12" Cursor="Hand" Opacity="0.6"
+                                            ToolTip="Eliminar mazo"/>
+                                    
+                                    <!-- Lista de archivos del mazo (compacta) -->
+                                    <ItemsControl Grid.Row="1" Grid.ColumnSpan="2" 
+                                                  ItemsSource="{Binding Files}" 
+                                                  Margin="0,6,0,0"
+                                                  Visibility="{Binding Files.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#F0F4F8" CornerRadius="4" 
+                                                        Padding="6,3" Margin="0,2,0,0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="📄" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Name}" 
+                                                                   FontSize="11" Foreground="#555"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   VerticalAlignment="Center"
+                                                                   ToolTip="{Binding Name}"/>
+                                                        <TextBlock Grid.Column="2" Foreground="#888" 
+                                                                   FontSize="10" VerticalAlignment="Center"
+                                                                   Margin="4,0,0,0">
+                                                            <Run Text="("/>
+                                                            <Run Text="{Binding Questions.Count, Mode=OneWay}"/>
+                                                            <Run Text=")"/>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                </StackPanel>
+                </Grid>
             </Border>
 
-            <!-- Right Panel: Deck Details -->
-            <Border Grid.Column="1" Background="#F5F5F5" CornerRadius="8" Padding="15" Margin="10,0,0,0">
+            <!-- Right Panel: Deck Details (más amplio y vistoso) -->
+            <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="12" Margin="10,0,0,0"
+                    BorderBrush="#E0E0E0" BorderThickness="1">
                 <Grid>
                     <!-- Main Deck Details -->
-                    <StackPanel Visibility="{Binding ShowQuestionList, Converter={StaticResource BoolToVisibilityInverseConverter}}">
-                        <TextBlock Text="Detalles del Mazo" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                    <Grid Visibility="{Binding ShowQuestionList, Converter={StaticResource BoolToVisibilityInverseConverter}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                        <StackPanel Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}">
-                            <TextBlock Text="{Binding SelectedDeck.Name}" FontSize="16" FontWeight="SemiBold"/>
+                        <!-- Header del panel derecho -->
+                        <Border Grid.Row="0" Background="#3F51B5" CornerRadius="12,12,0,0" Padding="20,15">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="📋 Detalles del Mazo" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="{Binding SelectedDeck.Name}" FontSize="20" FontWeight="Bold" 
+                                               Foreground="White" Margin="0,5,0,0"
+                                               Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                </StackPanel>
+                                <!-- Botón importar en header -->
+                                <Button Grid.Column="1" Padding="15,10" VerticalAlignment="Center"
+                                        Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                        Command="{Binding ImportFileCommand}"
+                                        Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityConverter}}"
+                                        Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="📁" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Importar PDF" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
 
-                            <!-- PDF Import Section -->
-                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                <TextBlock Text="Nº preguntas:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBox Text="{Binding PdfQuestionCount, UpdateSourceTrigger=PropertyChanged}" 
-                                         Width="60" Padding="8" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-                                <Button Content="📁 Importar PDF" Margin="10,0,0,0" Padding="15,10"
-                                        Command="{Binding ImportFileCommand}"/>
+                        <!-- Contenido -->
+                        <Grid Grid.Row="1" Margin="20">
+                            <!-- Mensaje cuando no hay mazo seleccionado -->
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityInverseConverter}}">
+                                <TextBlock Text="📚" FontSize="64" HorizontalAlignment="Center" Opacity="0.3"/>
+                                <TextBlock Text="Selecciona un mazo para ver sus detalles" 
+                                           FontSize="16" Foreground="#9E9E9E" Margin="0,15,0,0"
+                                           HorizontalAlignment="Center"/>
                             </StackPanel>
 
-                            <TextBlock Text="Archivos:" FontWeight="SemiBold" Margin="0,20,0,10"/>
-                            <ListBox ItemsSource="{Binding SelectedDeckFiles}" Height="200" BorderThickness="0" Background="Transparent">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="White" CornerRadius="5" Padding="10" Margin="0,2">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel>
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="{Binding Questions.Count, StringFormat='{}{0} preguntas'}" 
-                                                               Foreground="Gray" FontSize="12"/>
-                                                </StackPanel>
-                                                <Button Grid.Column="1" Content="▶️" ToolTip="Iniciar examen"
-                                                        Command="{Binding DataContext.ShowExamOptionsDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Background="Transparent" BorderThickness="0" FontSize="14" Margin="5,0"/>
-                                                <Button Grid.Column="2" Content="👁️" ToolTip="Ver preguntas"
-                                                        Command="{Binding DataContext.ShowFileQuestionsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Background="Transparent" BorderThickness="0" FontSize="14" Margin="5,0"/>
-                                                <Button Grid.Column="3" Content="🗑️" ToolTip="Eliminar archivo"
-                                                        Command="{Binding DataContext.DeleteFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Background="Transparent" BorderThickness="0"/>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                            <!-- Contenido del mazo seleccionado -->
+                            <Grid Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityConverter}}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                            <Button Content="🎯 Iniciar Examen del Mazo" Margin="0,20,0,0" Padding="20,12"
-                                    FontSize="14" FontWeight="Bold" Background="#4CAF50" Foreground="White"
-                                    HorizontalAlignment="Left"
-                                    Command="{Binding StartDeckExamCommand}"/>
-                        </StackPanel>
-                    </StackPanel>
+                                <!-- Stats rápidos -->
+                                <Border Grid.Row="0" Background="#F5F5F5" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <StackPanel Margin="0,0,30,0" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding SelectedDeckFiles.Count}" 
+                                                       FontSize="28" FontWeight="Bold" Foreground="#3F51B5"
+                                                       HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Archivos" FontSize="12" Foreground="#757575"
+                                                       HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                        <Border Width="1" Background="#E0E0E0" Margin="0,5"/>
+                                        <StackPanel Margin="30,0,0,0" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding SelectedDeckFiles, Converter={StaticResource CountToStringConverter}}" 
+                                                       FontSize="28" FontWeight="Bold" Foreground="#4CAF50"
+                                                       HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Preguntas" FontSize="12" Foreground="#757575"
+                                                       HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Lista de archivos -->
+                                <Grid Grid.Row="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <TextBlock Text="📂 Archivos del mazo" FontWeight="SemiBold" FontSize="14" 
+                                               Margin="0,0,0,10" Foreground="#424242"/>
+                                    
+                                    <!-- Mensaje si no hay archivos -->
+                                    <Border Grid.Row="1" Background="#FAFAFA" CornerRadius="8" Padding="30"
+                                            Visibility="{Binding SelectedDeckFiles.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="📄" FontSize="40" HorizontalAlignment="Center" Opacity="0.4"/>
+                                            <TextBlock Text="No hay archivos en este mazo" 
+                                                       FontSize="14" Foreground="#9E9E9E" Margin="0,10,0,0"/>
+                                            <TextBlock Text="Importa un PDF para comenzar" 
+                                                       FontSize="12" Foreground="#BDBDBD" Margin="0,5,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Lista de archivos -->
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                                  Visibility="{Binding SelectedDeckFiles.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                        <ItemsControl ItemsSource="{Binding SelectedDeckFiles}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#FAFAFA" CornerRadius="8" Padding="12" Margin="0,0,0,8"
+                                                            BorderBrush="#E8E8E8" BorderThickness="1">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            
+                                                            <!-- Icono -->
+                                                            <Border Grid.Column="0" Background="#E3F2FD" CornerRadius="6" 
+                                                                    Width="40" Height="40" Margin="0,0,12,0">
+                                                                <TextBlock Text="📄" FontSize="18" 
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            
+                                                            <!-- Info del archivo -->
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                                                    <Border Background="#E8F5E9" CornerRadius="3" Padding="6,2">
+                                                                        <TextBlock FontSize="11" Foreground="#2E7D32">
+                                                                            <Run Text="{Binding Questions.Count, Mode=OneWay}"/>
+                                                                            <Run Text=" preguntas"/>
+                                                                        </TextBlock>
+                                                                    </Border>
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                            
+                                                            <!-- Botones de acción -->
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Button Content="▶️" ToolTip="Iniciar examen" Padding="8,6"
+                                                                        Command="{Binding DataContext.ShowExamOptionsDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Background="#E8F5E9" BorderThickness="0" Margin="0,0,4,0"
+                                                                        Cursor="Hand"/>
+                                                                <Button Content="👁️" ToolTip="Ver preguntas" Padding="8,6"
+                                                                        Command="{Binding DataContext.ShowFileQuestionsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Background="#E3F2FD" BorderThickness="0" Margin="0,0,4,0"
+                                                                        Cursor="Hand"/>
+                                                                <Button Content="📊" ToolTip="Ver estadísticas" Padding="8,6"
+                                                                        Command="{Binding DataContext.ShowFileStatisticsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Background="#FFF3E0" BorderThickness="0" Margin="0,0,4,0"
+                                                                        Cursor="Hand"/>
+                                                                <Button Content="🗑️" ToolTip="Eliminar archivo" Padding="8,6"
+                                                                        Command="{Binding DataContext.DeleteFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Background="#FFEBEE" BorderThickness="0"
+                                                                        Cursor="Hand"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Grid>
+
+                                <!-- Botones de acción del mazo -->
+                                <Grid Grid.Row="2" Margin="0,15,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Botón iniciar examen del mazo -->
+                                    <Button Grid.Column="0" Padding="20,14" Margin="0,0,10,0"
+                                            HorizontalAlignment="Stretch"
+                                            Command="{Binding StartDeckExamCommand}"
+                                            Cursor="Hand" BorderThickness="0">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="#4CAF50"/>
+                                                <Setter Property="IsEnabled" Value="True"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedDeckFiles.Count}" Value="0">
+                                                        <Setter Property="Background" Value="#E0E0E0"/>
+                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <TextBlock Text="🎯" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="Iniciar Examen del Mazo" FontSize="14" FontWeight="Bold" 
+                                                       Foreground="White" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    
+                                    <!-- Botón estadísticas del mazo -->
+                                    <Button Grid.Column="1" Padding="14" ToolTip="Ver estadísticas del mazo"
+                                            Command="{Binding ShowDeckStatisticsCommand}"
+                                            Cursor="Hand" BorderThickness="0">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="#FF9800"/>
+                                                <Setter Property="IsEnabled" Value="True"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedDeckFiles.Count}" Value="0">
+                                                        <Setter Property="Background" Value="#E0E0E0"/>
+                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                        <TextBlock Text="📊" FontSize="18"/>
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Grid>
 
                     <!-- Question List Panel -->
                     <Grid Visibility="{Binding ShowQuestionList, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -121,52 +390,67 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         
-                        <Grid Row="0" Margin="0,0,0,15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding SelectedFile.Name, StringFormat='Preguntas: {0}'}" FontSize="18" FontWeight="Bold"/>
-                            <Button Grid.Column="1" Padding="10,5" Margin="0,0,10,0"
-                                    Command="{Binding ToggleEditModeCommand}">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Content" Value="✏️ Editar"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsEditMode}" Value="True">
-                                                <Setter Property="Content" Value="👁️ Solo ver"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                            <Button Grid.Column="2" Content="✖️ Cerrar" Padding="10,5"
-                                    Command="{Binding CloseQuestionListCommand}"/>
-                        </Grid>
+                        <!-- Header -->
+                        <Border Grid.Row="0" Background="#3F51B5" CornerRadius="12,12,0,0" Padding="20,15">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="📝 Preguntas" FontSize="14" Foreground="#B3E5FC"/>
+                                    <TextBlock Text="{Binding SelectedFile.Name}" FontSize="18" FontWeight="Bold" 
+                                               Foreground="White" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Padding="12,8" Margin="0,0,10,0"
+                                        Background="Transparent" Foreground="White" BorderThickness="1"
+                                        BorderBrush="#FFFFFF50"
+                                        Command="{Binding ToggleEditModeCommand}" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Content" Value="✏️ Editar"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                                    <Setter Property="Content" Value="👁️ Solo ver"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Grid.Column="2" Content="✖️ Cerrar" Padding="12,8"
+                                        Background="#F44336" Foreground="White" BorderThickness="0"
+                                        Command="{Binding CloseQuestionListCommand}" Cursor="Hand"/>
+                            </Grid>
+                        </Border>
 
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
                             <ItemsControl ItemsSource="{Binding QuestionsToShow}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="White" CornerRadius="5" Padding="12" Margin="0,0,0,8">
+                                        <Border Background="#FAFAFA" CornerRadius="8" Padding="15" Margin="0,0,0,10"
+                                                BorderBrush="#E8E8E8" BorderThickness="1">
                                             <StackPanel>
-                                                <TextBlock Text="{Binding Question.Number, StringFormat='Pregunta {0}'}" 
-                                                           FontWeight="Bold" FontSize="12" Foreground="#666"/>
-                                                <TextBlock Text="{Binding Question.Statement}" TextWrapping="Wrap" Margin="0,5,0,8"/>
+                                                <Border Background="#3F51B5" CornerRadius="4" Padding="8,4" 
+                                                        HorizontalAlignment="Left" Margin="0,0,0,10">
+                                                    <TextBlock Text="{Binding Question.Number, StringFormat='Pregunta {0}'}" 
+                                                               FontWeight="Bold" FontSize="11" Foreground="White"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding Question.Statement}" TextWrapping="Wrap" 
+                                                           Margin="0,0,0,12" FontSize="13"/>
                                                 <StackPanel Margin="10,0,0,0">
-                                                    <TextBlock Text="{Binding Question.OptionA, StringFormat='A) {0}'}" TextWrapping="Wrap" Margin="0,2"
+                                                    <TextBlock Text="{Binding Question.OptionA, StringFormat='A) {0}'}" TextWrapping="Wrap" Margin="0,3"
                                                                Foreground="{Binding Question.CorrectAnswer, Converter={StaticResource CorrectAnswerColorConverter}, ConverterParameter=A}"/>
-                                                    <TextBlock Text="{Binding Question.OptionB, StringFormat='B) {0}'}" TextWrapping="Wrap" Margin="0,2"
+                                                    <TextBlock Text="{Binding Question.OptionB, StringFormat='B) {0}'}" TextWrapping="Wrap" Margin="0,3"
                                                                Foreground="{Binding Question.CorrectAnswer, Converter={StaticResource CorrectAnswerColorConverter}, ConverterParameter=B}"/>
-                                                    <TextBlock Text="{Binding Question.OptionC, StringFormat='C) {0}'}" TextWrapping="Wrap" Margin="0,2"
+                                                    <TextBlock Text="{Binding Question.OptionC, StringFormat='C) {0}'}" TextWrapping="Wrap" Margin="0,3"
                                                                Foreground="{Binding Question.CorrectAnswer, Converter={StaticResource CorrectAnswerColorConverter}, ConverterParameter=C}"/>
-                                                    <TextBlock Text="{Binding Question.OptionD, StringFormat='D) {0}'}" TextWrapping="Wrap" Margin="0,2"
+                                                    <TextBlock Text="{Binding Question.OptionD, StringFormat='D) {0}'}" TextWrapping="Wrap" Margin="0,3"
                                                                Foreground="{Binding Question.CorrectAnswer, Converter={StaticResource CorrectAnswerColorConverter}, ConverterParameter=D}"/>
                                                 </StackPanel>
                                                 
-                                                <!-- Edit Mode: Cambiar respuesta correcta -->
-                                                <Border Background="#FFF3E0" CornerRadius="5" Padding="10" Margin="0,10,0,0"
+                                                <!-- Edit Mode -->
+                                                <Border Background="#FFF3E0" CornerRadius="6" Padding="12" Margin="0,12,0,0"
                                                         Visibility="{Binding DataContext.IsEditMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}">
                                                     <StackPanel>
                                                         <TextBlock Text="Cambiar respuesta correcta:" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
@@ -179,17 +463,18 @@
                                                                          IsChecked="{Binding SelectedAnswer, Converter={StaticResource CharToBoolConverter}, ConverterParameter=C}"/>
                                                             <RadioButton Content="D" GroupName="{Binding Question.Id}" Margin="0,0,15,0"
                                                                          IsChecked="{Binding SelectedAnswer, Converter={StaticResource CharToBoolConverter}, ConverterParameter=D}"/>
-                                                            <Button Content="💾 Guardar" Padding="10,3"
+                                                            <Button Content="💾 Guardar" Padding="10,5"
                                                                     Command="{Binding DataContext.SaveCorrectAnswerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                    CommandParameter="{Binding}"/>
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="#4CAF50" Foreground="White" BorderThickness="0"/>
                                                         </StackPanel>
                                                     </StackPanel>
                                                 </Border>
                                                 
                                                 <TextBlock Text="{Binding Question.Source, StringFormat='📚 Fuente: {0}'}" 
-                                                           FontStyle="Italic" Foreground="#666" Margin="0,8,0,0"
+                                                           FontStyle="Italic" Foreground="#666" Margin="0,10,0,0"
                                                            Visibility="{Binding Question.Source, Converter={StaticResource NullToVisibilityConverter}}"
-                                                           TextWrapping="Wrap"/>
+                                                           TextWrapping="Wrap" FontSize="12"/>
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>
@@ -204,7 +489,7 @@
         <!-- Loading Overlay -->
         <Border Background="#CC000000"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="30"
+            <Border Background="White" CornerRadius="12" Padding="40"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel HorizontalAlignment="Center">
                     <TextBlock Text="⏳" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,15"/>
@@ -215,18 +500,42 @@
             </Border>
         </Border>
 
-        <!-- Fondo semitransparente para diálogo de opciones de examen -->
+        <!-- Diálogo de opciones de examen -->
         <Border Background="#80000000"
                 Visibility="{Binding ShowExamOptions, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
-                    HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border Background="White" CornerRadius="12" Padding="25"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Margin="20">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
                 </Border.Effect>
-                <StackPanel MinWidth="350">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel MinWidth="380">
                     <TextBlock Text="⚙️ Opciones del Examen" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
                     
                     <TextBlock Text="{Binding ExamTargetFile.Name}" FontWeight="SemiBold" Margin="0,0,0,15"/>
+                    
+                    <!-- Filtro de preguntas -->
+                    <TextBlock Text="📋 Filtrar preguntas:" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <Border Background="#F5F5F5" CornerRadius="6" Padding="12" Margin="0,0,0,15">
+                        <StackPanel>
+                            <RadioButton Content="🔘 Todas las preguntas" Margin="0,0,0,8"
+                                         IsChecked="{Binding SelectedQuestionFilter, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=All}"
+                                         GroupName="FileQuestionFilter"/>
+                            <RadioButton Content="📝 Solo nunca contestadas" Margin="0,0,0,8"
+                                         IsChecked="{Binding SelectedQuestionFilter, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=NeverAnswered}"
+                                         GroupName="FileQuestionFilter"/>
+                            <RadioButton Content="❌ Solo falladas anteriormente" Margin="0,0,0,5"
+                                         IsChecked="{Binding SelectedQuestionFilter, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Failed}"
+                                         GroupName="FileQuestionFilter"/>
+                            <Border Background="#E3F2FD" CornerRadius="4" Padding="8,5" Margin="0,8,0,0">
+                                <TextBlock FontSize="12" Foreground="#1976D2">
+                                    <Run Text="Preguntas disponibles: "/>
+                                    <Run Text="{Binding AvailableQuestionsForFilter, Mode=OneWay}" FontWeight="Bold"/>
+                                </TextBlock>
+                            </Border>
+                        </StackPanel>
+                    </Border>
                     
                     <CheckBox Content="🔀 Preguntas en orden aleatorio" Margin="0,0,0,10"
                               IsChecked="{Binding RandomQuestions}"/>
@@ -242,10 +551,10 @@
                                     <TextBlock.ToolTip>
                                         <ToolTip>
                                             <StackPanel MaxWidth="300">
-                                                <TextBlock Text="Modo Revisión (activado):" FontWeight="Bold" Margin="0,0,0,5"/>
+                                                <TextBlock Text="Activado (Modo Revisión):" FontWeight="Bold" Margin="0,0,0,5"/>
                                                 <TextBlock Text="Verás la respuesta correcta después de cada pregunta." TextWrapping="Wrap"/>
                                                 <TextBlock Text=" " />
-                                                <TextBlock Text="Modo Examen Final (desactivado):" FontWeight="Bold" Margin="0,5,0,5"/>
+                                                <TextBlock Text="Desactivado (Modo Examen Final):" FontWeight="Bold" Margin="0,5,0,5"/>
                                                 <TextBlock Text="Las respuestas se mostrarán solo al finalizar el examen completo." TextWrapping="Wrap"/>
                                             </StackPanel>
                                         </ToolTip>
@@ -257,108 +566,178 @@
                     
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
+                                IsCancel="True"
                                 Command="{Binding CancelExamOptionsCommand}"/>
-                        <Button Content="▶️ Iniciar" Padding="15,8" 
-                                Background="#4CAF50" Foreground="White"
-                                Command="{Binding StartExamWithOptionsCommand}"/>
+                        <Button Padding="15,8" 
+                                IsDefault="True"
+                                Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                Command="{Binding StartExamWithOptionsCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Content" Value="▶️ Iniciar"/>
+                                    <Setter Property="IsEnabled" Value="True"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AvailableQuestionsForFilter}" Value="0">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                            <Setter Property="Content" Value="Sin preguntas"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </StackPanel>
                 </StackPanel>
+                </ScrollViewer>
             </Border>
         </Border>
 
-        <!-- Diálogo de advertencia (detectadas MENOS preguntas) -->
+        <!-- Diálogo de confirmación de importación PDF (múltiple) -->
         <Border Background="#80000000"
-                Visibility="{Binding ShowPdfWarningDialog, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
-                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="450">
+                Visibility="{Binding ShowPdfConfirmDialog, Converter={StaticResource BoolToVisibilityConverter}}"
+                Focusable="True"
+                FocusManager.FocusedElement="{Binding RelativeSource={RelativeSource Self}}">
+            <Border.InputBindings>
+                <KeyBinding Key="Enter" Command="{Binding ConfirmPdfImportCommand}"/>
+                <KeyBinding Key="Escape" Command="{Binding CancelPdfImportCommand}"/>
+            </Border.InputBindings>
+            <Border Background="White" CornerRadius="12" Padding="25"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" 
+                    MinWidth="500" MaxWidth="600"
+                    Margin="20">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
                 </Border.Effect>
                 <StackPanel>
-                    <TextBlock Text="ℹ️ Aviso de Importación" 
-                               FontSize="16" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,15"/>
+                    <TextBlock Text="📥 Confirmar Importación" 
+                               FontSize="18" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,15"/>
                     
-                    <TextBlock FontWeight="SemiBold" Margin="0,0,0,15">
-                        <Run Text="Archivo: "/>
-                        <Run Text="{Binding PendingPdfFileName, Mode=OneWay}"/>
-                        <Run Text=".pdf"/>
-                    </TextBlock>
-                    
-                    <Border Background="#E3F2FD" CornerRadius="5" Padding="15" Margin="0,0,0,20">
-                        <TextBlock Text="{Binding WarningMessage}" TextWrapping="Wrap" 
-                                   Foreground="#1976D2" FontSize="13"/>
-                    </Border>
-                    
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
-                                Command="{Binding CancelWarningCommand}"/>
-                        <Button Content="✅ Aceptar e Importar" Padding="15,8" 
-                                Background="#4CAF50" Foreground="White"
-                                Command="{Binding AcceptWarningAndImportCommand}"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-        </Border>
-
-        <!-- Diálogo de discrepancia (detectadas MÁS preguntas) -->
-        <Border Background="#80000000"
-                Visibility="{Binding ShowPdfMismatchDialog, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
-                    HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
-                </Border.Effect>
-                <StackPanel MinWidth="400">
-                    <TextBlock Text="⚠️ Discrepancia en número de preguntas" 
-                               FontSize="16" FontWeight="Bold" Foreground="#F57C00" Margin="0,0,0,15"/>
-                    
-                    <TextBlock FontWeight="SemiBold" Margin="0,0,0,15">
-                        <Run Text="Archivo: "/>
-                        <Run Text="{Binding PendingPdfFileName, Mode=OneWay}"/>
-                        <Run Text=".pdf"/>
-                    </TextBlock>
-                    
-                    <Border Background="#FFF3E0" CornerRadius="5" Padding="12" Margin="0,0,0,15">
+                    <!-- Resumen -->
+                    <Border Background="#E3F2FD" CornerRadius="6" Padding="15" Margin="0,0,0,15">
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                <TextBlock Text="Configuradas: " Foreground="#666"/>
-                                <TextBlock Text="{Binding PdfQuestionCount}" FontWeight="Bold"/>
-                                <TextBlock Text=" preguntas" Foreground="#666"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Detectadas: " Foreground="#666"/>
-                                <TextBlock Text="{Binding PdfDetectedQuestions}" FontWeight="Bold" Foreground="#4CAF50"/>
-                                <TextBlock Text=" preguntas" Foreground="#666"/>
-                            </StackPanel>
+                            <TextBlock TextWrapping="Wrap" Foreground="#1976D2" FontSize="13">
+                                <Run Text="Se importarán "/>
+                                <Run Text="{Binding TotalDetectedQuestions, Mode=OneWay}" FontWeight="Bold"/>
+                                <Run Text=" preguntas de "/>
+                                <Run Text="{Binding PendingPdfImports.Count, Mode=OneWay}" FontWeight="Bold"/>
+                                <Run Text=" archivo(s)"/>
+                            </TextBlock>
+                            
+                            <!-- Aviso de duplicados si los hay -->
+                            <TextBlock Margin="0,8,0,0" Foreground="#FF9800" FontSize="12"
+                                       Visibility="{Binding DuplicateFilesCount, Converter={StaticResource CountToVisibilityConverter}}">
+                                <Run Text="⚠️ "/>
+                                <Run Text="{Binding DuplicateFilesCount, Mode=OneWay}"/>
+                                <Run Text=" archivo(s) omitido(s) por estar duplicado(s)"/>
+                            </TextBlock>
                         </StackPanel>
                     </Border>
                     
-                    <TextBlock Text="¿Cuántas preguntas deseas importar?" Margin="0,0,0,15" FontWeight="SemiBold"/>
+                    <!-- Lista de archivos -->
+                    <TextBlock Text="📂 Archivos a importar:" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <Border Background="#FAFAFA" CornerRadius="6" Padding="10" Margin="0,0,0,15" MaxHeight="250">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding PendingPdfImports}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border CornerRadius="4" Padding="10" Margin="0,0,0,5">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="White"/>
+                                                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDuplicate}" Value="True">
+                                                            <Setter Property="Background" Value="#FFF3E0"/>
+                                                            <Setter Property="BorderBrush" Value="#FFB74D"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- Icono -->
+                                                <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="16">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="📄"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDuplicate}" Value="True">
+                                                                    <Setter Property="Text" Value="⚠️"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                
+                                                <!-- Nombre del archivo -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" 
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock FontSize="11" Margin="0,2,0,0">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#666"/>
+                                                                <Setter Property="Text" Value="{Binding DetectedQuestions, StringFormat='{}{0} preguntas detectadas'}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsDuplicate}" Value="True">
+                                                                        <Setter Property="Foreground" Value="#E65100"/>
+                                                                        <Setter Property="Text" Value="Ya existe en el mazo - se omitirá"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                                
+                                                <!-- Badge de estado -->
+                                                <Border Grid.Column="2" CornerRadius="4" Padding="8,4" VerticalAlignment="Center">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDuplicate}" Value="True">
+                                                                    <Setter Property="Background" Value="#FFECB3"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock FontSize="11" FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#2E7D32"/>
+                                                                <Setter Property="Text" Value="✓ Listo"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsDuplicate}" Value="True">
+                                                                        <Setter Property="Foreground" Value="#E65100"/>
+                                                                        <Setter Property="Text" Value="Omitido"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
                     
-                    <StackPanel>
-                        <Button Padding="12,10" Margin="0,0,0,8"
-                                HorizontalContentAlignment="Left"
-                                Command="{Binding ImportDetectedQuestionsCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📥 Importar " />
-                                <TextBlock Text="{Binding PdfDetectedQuestions}" FontWeight="Bold"/>
-                                <TextBlock Text=" (todas las detectadas)"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button Padding="12,10" Margin="0,0,0,8"
-                                HorizontalContentAlignment="Left"
-                                Command="{Binding ImportConfiguredQuestionsCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📋 Importar solo "/>
-                                <TextBlock Text="{Binding PdfQuestionCount}" FontWeight="Bold"/>
-                                <TextBlock Text=" (las configuradas)"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button Content="❌ Cancelar" Padding="12,10"
-                                HorizontalContentAlignment="Left"
+                    <TextBlock Text="Pulsa Enter para importar o Escape para cancelar" 
+                               FontSize="11" Foreground="#9E9E9E" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                    
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
                                 Command="{Binding CancelPdfImportCommand}"/>
+                        <Button Content="✅ Importar" Padding="15,8" 
+                                Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                Command="{Binding ConfirmPdfImportCommand}"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -367,38 +746,50 @@
         <!-- Diálogo de confirmación de borrado de mazo -->
         <Border Background="#80000000"
                 Visibility="{Binding ShowDeleteDeckDialog, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
+            <Border Background="White" CornerRadius="12" Padding="25"
                     HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="450">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
                 </Border.Effect>
                 <StackPanel>
-                    <TextBlock Text="⚠️ Confirmar Eliminación" 
+                    <TextBlock Text="⚠️ Eliminar Mazo Permanentemente" 
                                FontSize="16" FontWeight="Bold" Foreground="#F44336" Margin="0,0,0,15"/>
                     
-                    <TextBlock FontWeight="SemiBold" Margin="0,0,0,10">
+                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
                         <Run Text="¿Estás seguro de que deseas eliminar el mazo "/>
-                        <Run Text="{Binding DeckToDelete.Name, Mode=OneWay}" FontWeight="Bold"/>
+                        <Run Text="{Binding DeckToDelete.Name, Mode=OneWay}" FontWeight="Bold" Foreground="#F44336"/>
                         <Run Text="?"/>
                     </TextBlock>
                     
-                    <Border Background="#FFEBEE" CornerRadius="5" Padding="15" Margin="0,0,0,20">
+                    <Border Background="#FFEBEE" CornerRadius="6" Padding="15" Margin="0,0,0,15">
                         <StackPanel>
                             <TextBlock TextWrapping="Wrap" Foreground="#C62828" FontSize="13" Margin="0,0,0,8">
                                 <Run Text="Este mazo contiene "/>
                                 <Run Text="{Binding DeckToDelete.Files.Count, Mode=OneWay}" FontWeight="Bold"/>
                                 <Run Text=" archivo(s) con todas sus preguntas."/>
                             </TextBlock>
-                            <TextBlock Text="Esta acción no se puede deshacer." 
+                            <TextBlock Text="⚠️ Esta acción no se puede deshacer." 
                                        TextWrapping="Wrap" Foreground="#C62828" FontSize="13" FontWeight="Bold"/>
                         </StackPanel>
                     </Border>
                     
+                    <!-- Validación de nombre -->
+                    <TextBlock Text="Para confirmar, escribe el nombre del mazo:" 
+                               FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBox Text="{Binding DeleteDeckConfirmName, UpdateSourceTrigger=PropertyChanged}" 
+                             Padding="10" FontSize="14" Margin="0,0,0,5"/>
+                    
+                    <!-- Mensaje de error -->
+                    <TextBlock Text="{Binding DeleteDeckError}" 
+                               Foreground="#F44336" FontSize="12" Margin="0,0,0,15"
+                               Visibility="{Binding DeleteDeckError, Converter={StaticResource NullToVisibilityConverter}}"/>
+                    
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
+                                IsCancel="True"
                                 Command="{Binding CancelDeleteDeckCommand}"/>
-                        <Button Content="🗑️ Eliminar" Padding="15,8" 
-                                Background="#F44336" Foreground="White"
+                        <Button Content="🗑️ Eliminar Definitivamente" Padding="15,8" 
+                                Background="#F44336" Foreground="White" BorderThickness="0"
                                 Command="{Binding ConfirmDeleteDeckCommand}"/>
                     </StackPanel>
                 </StackPanel>
@@ -408,12 +799,14 @@
         <!-- Diálogo de opciones del examen del mazo -->
         <Border Background="#80000000"
                 Visibility="{Binding ShowDeckExamOptions, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
-                    HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border Background="White" CornerRadius="12" Padding="25"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Margin="20">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
                 </Border.Effect>
-                <StackPanel MinWidth="350">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel MinWidth="380">
                     <TextBlock Text="⚙️ Opciones del Examen del Mazo" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
                     
                     <TextBlock FontWeight="SemiBold" Margin="0,0,0,15">
@@ -421,11 +814,26 @@
                         <Run Text="{Binding SelectedDeck.Name, Mode=OneWay}"/>
                     </TextBlock>
                     
-                    <Border Background="#E8F5E9" CornerRadius="5" Padding="12" Margin="0,0,0,15">
-                        <TextBlock>
-                            <Run Text="Total de preguntas disponibles: "/>
-                            <Run Text="{Binding SelectedDeckFiles, Converter={StaticResource CountToStringConverter}, Mode=OneWay}" FontWeight="Bold"/>
-                        </TextBlock>
+                    <!-- Filtro de preguntas -->
+                    <TextBlock Text="📋 Filtrar preguntas:" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <Border Background="#F5F5F5" CornerRadius="6" Padding="12" Margin="0,0,0,15">
+                        <StackPanel>
+                            <RadioButton Content="🔘 Todas las preguntas" Margin="0,0,0,8"
+                                         IsChecked="{Binding SelectedDeckQuestionFilter, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=All}"
+                                         GroupName="DeckQuestionFilter"/>
+                            <RadioButton Content="📝 Solo nunca contestadas" Margin="0,0,0,8"
+                                         IsChecked="{Binding SelectedDeckQuestionFilter, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=NeverAnswered}"
+                                         GroupName="DeckQuestionFilter"/>
+                            <RadioButton Content="❌ Solo falladas anteriormente" Margin="0,0,0,5"
+                                         IsChecked="{Binding SelectedDeckQuestionFilter, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=Failed}"
+                                         GroupName="DeckQuestionFilter"/>
+                            <Border Background="#E3F2FD" CornerRadius="4" Padding="8,5" Margin="0,8,0,0">
+                                <TextBlock FontSize="12" Foreground="#1976D2">
+                                    <Run Text="Preguntas disponibles: "/>
+                                    <Run Text="{Binding AvailableDeckQuestionsForFilter, Mode=OneWay}" FontWeight="Bold"/>
+                                </TextBlock>
+                            </Border>
+                        </StackPanel>
                     </Border>
                     
                     <TextBlock Text="Número de preguntas del examen:" Margin="0,0,0,8" FontWeight="SemiBold"/>
@@ -468,12 +876,529 @@
                     
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
+                                IsCancel="True"
                                 Command="{Binding CancelDeckExamOptionsCommand}"/>
-                        <Button Content="▶️ Iniciar Examen" Padding="15,8" 
-                                Background="#4CAF50" Foreground="White"
-                                Command="{Binding StartDeckExamWithOptionsCommand}"/>
+                        <Button Padding="15,8" 
+                                IsDefault="True"
+                                Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                Command="{Binding StartDeckExamWithOptionsCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Content" Value="▶️ Iniciar Examen"/>
+                                    <Setter Property="IsEnabled" Value="True"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AvailableDeckQuestionsForFilter}" Value="0">
+                                            <Setter Property="IsEnabled" Value="False"/>
+                                            <Setter Property="Content" Value="Sin preguntas"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
                     </StackPanel>
                 </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Border>
+
+        <!-- Diálogo de archivo duplicado -->
+        <Border Background="#80000000"
+                Visibility="{Binding ShowDuplicateFileDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="White" CornerRadius="12" Padding="25"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="450">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="⚠️ Archivo Duplicado" 
+                               FontSize="16" FontWeight="Bold" Foreground="#FF9800" Margin="0,0,0,15"
+                               HorizontalAlignment="Center"/>
+                    
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,15">
+                        <Run Text="Ya existe un archivo con el nombre "/>
+                        <Run Text="{Binding DuplicateFileName, Mode=OneWay}" FontWeight="Bold" Foreground="#FF9800"/>
+                        <Run Text=" en este mazo."/>
+                    </TextBlock>
+                    
+                    <Border Background="#FFF3E0" CornerRadius="6" Padding="15" Margin="0,0,0,20">
+                        <TextBlock Text="Si deseas reemplazarlo, primero elimina el archivo existente y luego importa el nuevo." 
+                                   TextWrapping="Wrap" Foreground="#E65100" FontSize="13"
+                                   TextAlignment="Center"/>
+                    </Border>
+                    
+                    <Button Content="Entendido" Padding="20,10" 
+                            HorizontalAlignment="Center"
+                            Background="#FF9800" Foreground="White" BorderThickness="0"
+                            Command="{Binding CloseDuplicateFileDialogCommand}"/>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- Diálogo de estadísticas de archivo -->
+        <Border Background="#80000000"
+                Visibility="{Binding ShowFileStatisticsDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="White" CornerRadius="12" Padding="25"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="550"
+                    Margin="20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
+                </Border.Effect>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel MinWidth="450">
+                    <TextBlock Text="📊 Estadísticas del Archivo" 
+                               FontSize="18" FontWeight="Bold" Foreground="#3F51B5" Margin="0,0,0,5"/>
+                    <TextBlock Text="{Binding CurrentFileStatistics.FileName}" 
+                               FontSize="14" Foreground="#666" Margin="0,0,0,20"/>
+                    
+                    <!-- Estadísticas generales -->
+                    <Border Background="#F5F5F5" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding CurrentFileStatistics.TotalQuestions}" 
+                                           FontSize="24" FontWeight="Bold" Foreground="#3F51B5" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Preguntas" FontSize="11" Foreground="#757575" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding CurrentFileStatistics.TotalAttempts}" 
+                                           FontSize="24" FontWeight="Bold" Foreground="#FF9800" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Intentos" FontSize="11" Foreground="#757575" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding CurrentFileStatistics.SuccessRate, StringFormat={}{0:F1}%}" 
+                                           FontSize="24" FontWeight="Bold" Foreground="#4CAF50" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Aciertos" FontSize="11" Foreground="#757575" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Detalles de respuestas -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="#E8F5E9" CornerRadius="6" Padding="12" Margin="0,0,5,0">
+                            <StackPanel>
+                                <TextBlock Text="✅ Correctas" FontWeight="SemiBold" Foreground="#2E7D32" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding CurrentFileStatistics.CorrectAttempts}" 
+                                           FontSize="20" FontWeight="Bold" Foreground="#2E7D32"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Background="#FFEBEE" CornerRadius="6" Padding="12" Margin="5,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="❌ Incorrectas" FontWeight="SemiBold" Foreground="#C62828" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding CurrentFileStatistics.IncorrectAttempts}" 
+                                           FontSize="20" FontWeight="Bold" Foreground="#C62828"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    
+                    <!-- Información adicional -->
+                    <Border Background="#FAFAFA" CornerRadius="6" Padding="12" Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Margin="0,0,0,5">
+                                <Run Text="📝 Preguntas nunca contestadas: " Foreground="#666"/>
+                                <Run Text="{Binding CurrentFileStatistics.QuestionsNeverAnswered, Mode=OneWay}" FontWeight="SemiBold"/>
+                            </TextBlock>
+                            <TextBlock Margin="0,0,0,5">
+                                <Run Text="🌟 Preguntas siempre acertadas: " Foreground="#666"/>
+                                <Run Text="{Binding CurrentFileStatistics.QuestionsAlwaysCorrect, Mode=OneWay}" FontWeight="SemiBold" Foreground="#4CAF50"/>
+                            </TextBlock>
+                            <TextBlock>
+                                <Run Text="⚠️ Preguntas siempre falladas: " Foreground="#666"/>
+                                <Run Text="{Binding CurrentFileStatistics.QuestionsAlwaysWrong, Mode=OneWay}" FontWeight="SemiBold" Foreground="#F44336"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Preguntas más falladas (Top 5) -->
+                    <TextBlock Text="🔥 Preguntas más falladas" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <Border Background="#FAFAFA" CornerRadius="6" Padding="10" MaxHeight="150" Margin="0,0,0,15">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding CurrentFileStatistics.MostFailedQuestions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="White" CornerRadius="4" Padding="10" Margin="0,0,0,5"
+                                                BorderBrush="#FFCDD2" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- Número de pregunta -->
+                                                <Border Grid.Column="0" Background="#F44336" CornerRadius="4" 
+                                                        Padding="8,4" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding QuestionNumber, StringFormat='#{0}'}" 
+                                                               FontWeight="Bold" FontSize="11" Foreground="White"/>
+                                                </Border>
+                                                
+                                                <!-- Enunciado (truncado) -->
+                                                <TextBlock Grid.Column="1" Text="{Binding Statement}" 
+                                                           VerticalAlignment="Center" FontSize="11"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding Statement}"
+                                                           Foreground="#424242"/>
+                                                
+                                                <!-- Estadísticas -->
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" 
+                                                            VerticalAlignment="Center" Margin="10,0,0,0">
+                                                    <Border Background="#FFEBEE" CornerRadius="3" Padding="6,3" Margin="0,0,5,0">
+                                                        <TextBlock FontSize="10" Foreground="#C62828">
+                                                            <Run Text="{Binding TimesFailed, Mode=OneWay}"/>
+                                                            <Run Text=" fallos"/>
+                                                        </TextBlock>
+                                                    </Border>
+                                                    <Border CornerRadius="3" Padding="6,3">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#FFEBEE"/>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="{Binding FailureRate, StringFormat={}{0:F0}%}" 
+                                                                   FontSize="10" FontWeight="SemiBold" Foreground="#C62828"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                    
+                    <!-- Gráfico de progreso (últimos 14 días) -->
+                    <TextBlock Text="📈 Progreso (últimos 14 días)" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <Border Background="#FAFAFA" CornerRadius="6" Padding="15" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="80"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Barras del gráfico -->
+                            <ItemsControl Grid.Row="0" ItemsSource="{Binding CurrentFileProgressHistory.DailyProgress}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="1,0" ToolTip="{Binding DateLabel}">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <!-- Barra -->
+                                            <Border Grid.Row="0" VerticalAlignment="Bottom" CornerRadius="2,2,0,0"
+                                                    Height="{Binding SuccessRate, Converter={StaticResource PercentToHeightConverter}}"
+                                                    MinHeight="2">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#E0E0E0"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding TotalAttempts}" Value="0">
+                                                                <Setter Property="Background" Value="#E0E0E0"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Border CornerRadius="2,2,0,0">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#4CAF50"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding TotalAttempts}" Value="0">
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+                                            </Border>
+                                            
+                                            <!-- Indicador de actividad -->
+                                            <Ellipse Grid.Row="1" Width="4" Height="4" Margin="0,3,0,0" 
+                                                     HorizontalAlignment="Center">
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Fill" Value="#E0E0E0"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding TotalAttempts}" Value="0">
+                                                                <Setter Property="Fill" Value="#E0E0E0"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Ellipse.Style>
+                                            </Ellipse>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            
+                            <!-- Info de tendencia -->
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                                <TextBlock FontSize="11" Foreground="#666">
+                                    <Run Text="Días estudiados: "/>
+                                    <Run Text="{Binding CurrentFileProgressHistory.TotalDaysStudied, Mode=OneWay}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                                <TextBlock Text=" | " Foreground="#CCC" Margin="5,0"/>
+                                <TextBlock FontSize="11">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#666"/>
+                                        </Style>
+                                    </TextBlock.Style>
+                                    <Run Text="Tendencia: "/>
+                                    <Run FontWeight="SemiBold">
+                                        <Run.Style>
+                                            <Style TargetType="Run">
+                                                <Setter Property="Text" Value="→ Estable"/>
+                                                <Setter Property="Foreground" Value="#FF9800"/>
+                                            </Style>
+                                        </Run.Style>
+                                    </Run>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    
+                    <Button Content="Cerrar" Padding="20,10" 
+                            HorizontalAlignment="Center"
+                            Background="#3F51B5" Foreground="White" BorderThickness="0"
+                            Command="{Binding CloseFileStatisticsCommand}"/>
+                </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Border>
+
+        <!-- Diálogo de estadísticas del mazo -->
+        <Border Background="#80000000"
+                Visibility="{Binding ShowDeckStatisticsDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="White" CornerRadius="12" Padding="25"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="600"
+                    Margin="20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
+                </Border.Effect>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel MinWidth="500">
+                    <TextBlock Text="📊 Estadísticas del Mazo" 
+                               FontSize="18" FontWeight="Bold" Foreground="#3F51B5" Margin="0,0,0,5"/>
+                    <TextBlock Text="{Binding CurrentDeckStatistics.DeckName}" 
+                               FontSize="14" Foreground="#666" Margin="0,0,0,20"/>
+                    
+                    <!-- Estadísticas generales del mazo -->
+                    <Border Background="#F5F5F5" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding CurrentDeckStatistics.TotalFiles}" 
+                                           FontSize="22" FontWeight="Bold" Foreground="#9C27B0" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Archivos" FontSize="11" Foreground="#757575" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding CurrentDeckStatistics.TotalQuestions}" 
+                                           FontSize="22" FontWeight="Bold" Foreground="#3F51B5" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Preguntas" FontSize="11" Foreground="#757575" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding CurrentDeckStatistics.TotalAttempts}" 
+                                           FontSize="22" FontWeight="Bold" Foreground="#FF9800" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Intentos" FontSize="11" Foreground="#757575" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding CurrentDeckStatistics.SuccessRate, StringFormat={}{0:F1}%}" 
+                                           FontSize="22" FontWeight="Bold" Foreground="#4CAF50" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Aciertos" FontSize="11" Foreground="#757575" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    
+                    <!-- Detalles de respuestas -->
+                    <Grid Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="#E8F5E9" CornerRadius="6" Padding="12" Margin="0,0,5,0">
+                            <StackPanel>
+                                <TextBlock Text="✅ Correctas" FontWeight="SemiBold" Foreground="#2E7D32" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding CurrentDeckStatistics.CorrectAttempts}" 
+                                           FontSize="20" FontWeight="Bold" Foreground="#2E7D32"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Background="#FFEBEE" CornerRadius="6" Padding="12" Margin="5,0,0,0">
+                            <StackPanel>
+                                <TextBlock Text="❌ Incorrectas" FontWeight="SemiBold" Foreground="#C62828" Margin="0,0,0,5"/>
+                                <TextBlock Text="{Binding CurrentDeckStatistics.IncorrectAttempts}" 
+                                           FontSize="20" FontWeight="Bold" Foreground="#C62828"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    
+                    <!-- Resumen por archivo -->
+                    <TextBlock Text="📂 Rendimiento por archivo" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                    <Border Background="#FAFAFA" CornerRadius="6" Padding="10" MaxHeight="150" Margin="0,0,0,15">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding CurrentDeckStatistics.FilesSummary}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="White" CornerRadius="4" Padding="10" Margin="0,0,0,5"
+                                                BorderBrush="#E0E0E0" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding FileName}" 
+                                                           VerticalAlignment="Center" FontSize="12"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="1" VerticalAlignment="Center" 
+                                                           Margin="10,0" FontSize="11" Foreground="#666">
+                                                    <Run Text="{Binding TotalAttempts, Mode=OneWay}"/>
+                                                    <Run Text=" intentos"/>
+                                                </TextBlock>
+                                                <Border Grid.Column="2" CornerRadius="4" Padding="8,4" MinWidth="60">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#E0E0E0"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding TotalAttempts}" Value="0">
+                                                                    <Setter Property="Background" Value="#E0E0E0"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding SuccessRate, StringFormat={}{0:F0}%}" 
+                                                               HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="11">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#4CAF50"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding TotalAttempts}" Value="0">
+                                                                        <Setter Property="Foreground" Value="#9E9E9E"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                    
+                    <!-- Gráfico de progreso del mazo (últimos 14 días) -->
+                    <TextBlock Text="📈 Progreso (últimos 14 días)" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <Border Background="#FAFAFA" CornerRadius="6" Padding="15" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="80"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Barras del gráfico -->
+                            <ItemsControl Grid.Row="0" ItemsSource="{Binding CurrentDeckProgressHistory.DailyProgress}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="1,0" ToolTip="{Binding DateLabel}">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            
+                                            <!-- Barra -->
+                                            <Border Grid.Row="0" VerticalAlignment="Bottom" CornerRadius="2,2,0,0"
+                                                    Height="{Binding SuccessRate, Converter={StaticResource PercentToHeightConverter}}"
+                                                    MinHeight="2">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#E0E0E0"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding TotalAttempts}" Value="0">
+                                                                <Setter Property="Background" Value="#E0E0E0"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Border CornerRadius="2,2,0,0">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#9C27B0"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding TotalAttempts}" Value="0">
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+                                            </Border>
+                                            
+                                            <!-- Indicador de actividad -->
+                                            <Ellipse Grid.Row="1" Width="4" Height="4" Margin="0,3,0,0" 
+                                                     HorizontalAlignment="Center">
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Fill" Value="#E0E0E0"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding TotalAttempts}" Value="0">
+                                                                <Setter Property="Fill" Value="#E0E0E0"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Ellipse.Style>
+                                            </Ellipse>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            
+                            <!-- Info de tendencia -->
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0">
+                                <TextBlock FontSize="11" Foreground="#666">
+                                    <Run Text="Días estudiados: "/>
+                                    <Run Text="{Binding CurrentDeckProgressHistory.TotalDaysStudied, Mode=OneWay}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                                <TextBlock Text=" | " Foreground="#CCC" Margin="5,0"/>
+                                <TextBlock FontSize="11" Foreground="#666">
+                                    <Run Text="Tendencia: "/>
+                                    <Run Text="{Binding CurrentDeckProgressHistory.OverallTrend, Converter={StaticResource TrendToTextConverter}}" 
+                                         FontWeight="SemiBold"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    
+                    <Button Content="Cerrar" Padding="20,10" 
+                            HorizontalAlignment="Center"
+                            Background="#3F51B5" Foreground="White" BorderThickness="0"
+                            Command="{Binding CloseDeckStatisticsCommand}"/>
+                </StackPanel>
+                </ScrollViewer>
             </Border>
         </Border>
     </Grid>

@@ -12,7 +12,7 @@ public partial class ExamViewModel : ObservableObject
     private readonly Action _goHomeAction;
     private List<Question> _questions = [];
     private List<Question> _failedQuestions = [];
-    private List<(Question Question, char UserAnswer)> _allAnswers = [];
+    private List<AnswerRecord> _allAnswers = [];
     private int _currentIndex;
     private bool _shuffleAnswers;
     private bool _isReviewModeEnabled;
@@ -144,15 +144,19 @@ public partial class ExamViewModel : ObservableObject
         {
             CurrentQuestion = _questions[_currentIndex];
             
+            // El número visual es siempre secuencial (1, 2, 3...)
+            int displayNumber = _currentIndex + 1;
+            
             if (_shuffleAnswers)
             {
-                DisplayQuestion = CreateShuffledQuestion(CurrentQuestion);
+                DisplayQuestion = CreateShuffledQuestion(CurrentQuestion, displayNumber);
             }
             else
             {
                 DisplayQuestion = new ShuffledQuestion
                 {
-                    Number = CurrentQuestion.Number,
+                    DisplayNumber = displayNumber,
+                    OriginalNumber = CurrentQuestion.Number,
                     Statement = CurrentQuestion.Statement,
                     OptionA = CurrentQuestion.OptionA,
                     OptionB = CurrentQuestion.OptionB,
@@ -179,7 +183,7 @@ public partial class ExamViewModel : ObservableObject
             IsOptionCSelected = false;
             IsOptionDSelected = false;
             ShowResult = false;
-            ProgressText = $"Pregunta {_currentIndex + 1} de {_questions.Count}";
+            ProgressText = $"Pregunta {displayNumber} de {_questions.Count}";
         }
         else
         {
@@ -191,7 +195,7 @@ public partial class ExamViewModel : ObservableObject
         }
     }
 
-    private ShuffledQuestion CreateShuffledQuestion(Question question)
+    private ShuffledQuestion CreateShuffledQuestion(Question question, int displayNumber)
     {
         var options = new List<(char Original, string Text)>
         {
@@ -218,7 +222,8 @@ public partial class ExamViewModel : ObservableObject
         
         return new ShuffledQuestion
         {
-            Number = question.Number,
+            DisplayNumber = displayNumber,
+            OriginalNumber = question.Number,
             Statement = question.Statement,
             OptionA = shuffled[0].Text,
             OptionB = shuffled[1].Text,
@@ -231,7 +236,7 @@ public partial class ExamViewModel : ObservableObject
     [RelayCommand]
     private async Task ConfirmAnswer()
     {
-        if (SelectedAnswer == null || CurrentQuestion == null) return;
+        if (SelectedAnswer == null || CurrentQuestion == null || DisplayQuestion == null) return;
 
         // Convertir respuesta mostrada a respuesta original
         var originalAnswer = _displayToOriginalMapping[SelectedAnswer.Value];
@@ -240,8 +245,13 @@ public partial class ExamViewModel : ObservableObject
 
         IsCorrect = originalAnswer == CurrentQuestion.CorrectAnswer;
         
-        // Guardar respuesta para repaso (guardamos la letra original)
-        _allAnswers.Add((CurrentQuestion, originalAnswer));
+        // Guardar respuesta para repaso
+        _allAnswers.Add(new AnswerRecord
+        {
+            Question = CurrentQuestion,
+            UserAnswer = originalAnswer,
+            DisplayNumber = DisplayQuestion.DisplayNumber
+        });
         
         if (IsCorrect)
         {
@@ -283,7 +293,8 @@ public partial class ExamViewModel : ObservableObject
             {
                 Question = a.Question,
                 UserAnswer = a.UserAnswer,
-                IsCorrect = a.UserAnswer == a.Question.CorrectAnswer
+                IsCorrect = a.UserAnswer == a.Question.CorrectAnswer,
+                DisplayNumber = a.DisplayNumber
             }));
         ShowReviewMode = true;
     }
@@ -312,7 +323,16 @@ public partial class ExamViewModel : ObservableObject
 
 public class ShuffledQuestion
 {
-    public int Number { get; set; }
+    /// <summary>
+    /// Número visual mostrado al usuario (1, 2, 3...)
+    /// </summary>
+    public int DisplayNumber { get; set; }
+    
+    /// <summary>
+    /// Número original de la pregunta en el archivo
+    /// </summary>
+    public int OriginalNumber { get; set; }
+    
     public string Statement { get; set; } = string.Empty;
     public string OptionA { get; set; } = string.Empty;
     public string OptionB { get; set; } = string.Empty;
@@ -321,9 +341,24 @@ public class ShuffledQuestion
     public string? Source { get; set; }
 }
 
+/// <summary>
+/// Registro de una respuesta durante el examen
+/// </summary>
+public class AnswerRecord
+{
+    public Question Question { get; set; } = null!;
+    public char UserAnswer { get; set; }
+    public int DisplayNumber { get; set; }
+}
+
 public class ReviewQuestion
 {
     public Question Question { get; set; } = null!;
     public char UserAnswer { get; set; }
     public bool IsCorrect { get; set; }
+    
+    /// <summary>
+    /// Número visual que se mostró durante el examen
+    /// </summary>
+    public int DisplayNumber { get; set; }
 }

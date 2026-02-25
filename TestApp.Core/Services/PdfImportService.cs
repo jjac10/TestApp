@@ -7,44 +7,90 @@ namespace TestApp.Core.Services;
 
 public partial class PdfImportService : IPdfImportService
 {
+    // Cache para evitar leer el PDF dos veces
+    private string? _cachedPdfPath;
+    private string? _cachedText;
+
     public Task<List<QuestionImportDto>> ExtractQuestionsFromPdfAsync(string pdfPath, int numberOfQuestions)
     {
-        var text = ExtractTextFromPdf(pdfPath);
+        var text = GetTextFromPdf(pdfPath);
         var questions = ParseQuestions(text, numberOfQuestions);
+        
+        // Limpiar cache después de extraer
+        ClearCache();
+        
         return Task.FromResult(questions);
     }
 
     public Task<int> CountQuestionsInPdfAsync(string pdfPath)
     {
-        var text = ExtractTextFromPdf(pdfPath);
+        var text = GetTextFromPdf(pdfPath);
         var count = CountQuestions(text);
         return Task.FromResult(count);
+    }
+
+    private string GetTextFromPdf(string pdfPath)
+    {
+        // Si ya tenemos el texto cacheado para este PDF, lo reutilizamos
+        if (_cachedPdfPath == pdfPath && _cachedText != null)
+        {
+            return _cachedText;
+        }
+
+        _cachedText = ExtractTextFromPdf(pdfPath);
+        _cachedPdfPath = pdfPath;
+        return _cachedText;
+    }
+
+    private void ClearCache()
+    {
+        _cachedPdfPath = null;
+        _cachedText = null;
     }
 
     private static int CountQuestions(string text)
     {
         var count = 0;
-        var questionNumber = 1;
+        var searchPosition = 0;
 
-        while (true)
+        for (int questionNumber = 1; questionNumber <= 1000; questionNumber++)
         {
             var numberPattern = $"{questionNumber}.";
-            var numberIndex = text.IndexOf(numberPattern, StringComparison.Ordinal);
+            
+            // Buscar el patrón desde la posición actual
+            var numberIndex = text.IndexOf(numberPattern, searchPosition, StringComparison.Ordinal);
             
             if (numberIndex == -1) break;
 
-            // Verificar que tiene estructura de pregunta (al menos A) y B))
-            var optionAIndex = text.IndexOf("A)", numberIndex, StringComparison.Ordinal);
+            // Verificar que tiene estructura de pregunta (al menos A))
             var nextQuestionPattern = $"{questionNumber + 1}.";
             var nextQuestionIndex = text.IndexOf(nextQuestionPattern, numberIndex + numberPattern.Length, StringComparison.Ordinal);
             
-            // Verificar que A) está antes de la siguiente pregunta
-            if (optionAIndex != -1 && (nextQuestionIndex == -1 || optionAIndex < nextQuestionIndex))
-            {
-                count++;
-            }
+            // Definir el rango donde buscar A)
+            var searchEnd = nextQuestionIndex != -1 ? nextQuestionIndex : text.Length;
+            var searchLength = searchEnd - numberIndex;
             
-            questionNumber++;
+            if (searchLength > 0)
+            {
+                var optionAIndex = text.IndexOf("A)", numberIndex, searchLength, StringComparison.Ordinal);
+                
+                // Verificar que A) está presente en el rango de esta pregunta
+                if (optionAIndex != -1)
+                {
+                    count++;
+                    // Avanzar la posición de búsqueda para la siguiente iteración
+                    searchPosition = numberIndex + numberPattern.Length;
+                }
+                else
+                {
+                    // No es una pregunta válida, pero seguimos buscando desde aquí
+                    searchPosition = numberIndex + numberPattern.Length;
+                }
+            }
+            else
+            {
+                searchPosition = numberIndex + numberPattern.Length;
+            }
         }
 
         return count;

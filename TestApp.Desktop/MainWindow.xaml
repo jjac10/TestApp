@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:TestApp.Desktop.Views"
         xmlns:vm="clr-namespace:TestApp.Desktop.ViewModels"
+        xmlns:converters="clr-namespace:TestApp.Desktop.Converters"
         Title="Test App - Preparación de Exámenes" 
         Height="600" Width="900"
         WindowStartupLocation="CenterScreen">
@@ -14,6 +15,7 @@
         <DataTemplate DataType="{x:Type vm:ExamViewModel}">
             <views:ExamView />
         </DataTemplate>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </Window.Resources>
 
     <Grid>
@@ -24,15 +26,52 @@
 
         <!-- Header -->
         <Border Grid.Row="0" Background="#2D2D30" Padding="15">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="📚 Test App" Foreground="White" FontSize="20" FontWeight="Bold"/>
-                <Button Content="🏠 Inicio" Margin="30,0,0,0" 
-                        Command="{Binding NavigateToDeckListCommand}"
-                        Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"/>
-            </StackPanel>
+            <Button Command="{Binding RequestNavigateToDeckListCommand}"
+                    Background="Transparent" BorderThickness="0" Cursor="Hand"
+                    HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📚" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="PacoTEST" Foreground="White" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
         </Border>
 
         <!-- Content -->
         <ContentControl Grid.Row="1" Content="{Binding CurrentView}" Margin="10"/>
+
+        <!-- Diálogo de confirmación para salir del examen -->
+        <Border Grid.RowSpan="2" Background="#80000000"
+                Visibility="{Binding ShowExitExamDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="White" CornerRadius="12" Padding="25"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="400">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="⚠️ ¿Salir del examen?" 
+                               FontSize="18" FontWeight="Bold" Foreground="#FF9800" Margin="0,0,0,15"
+                               HorizontalAlignment="Center"/>
+                    
+                    <TextBlock Text="El examen está en curso. Si sales ahora, perderás todo el progreso." 
+                               TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,20"
+                               Foreground="#666"/>
+                    
+                    <Border Background="#FFF3E0" CornerRadius="6" Padding="12" Margin="0,0,0,20">
+                        <TextBlock Text="Tu progreso no se guardará." 
+                                   TextWrapping="Wrap" Foreground="#E65100" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"/>
+                    </Border>
+                    
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="Continuar examen" Padding="15,10" Margin="0,0,10,0"
+                                Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                Command="{Binding CancelExitExamCommand}"/>
+                        <Button Content="Salir" Padding="15,10"
+                                Background="#F44336" Foreground="White" BorderThickness="0"
+                                Command="{Binding ConfirmExitExamCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
     </Grid>
 </Window>
