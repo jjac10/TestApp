@@ -12,17 +12,17 @@
                     <TextBlock Text="{Binding ProgressText}" FontSize="14" Foreground="Gray" Margin="0,0,0,10"/>
                     <ProgressBar Value="{Binding TotalAnswered}" Maximum="{Binding QuestionsCount}" Height="8" Margin="0,0,0,20"/>
 
-                    <!-- Question -->
+                    <!-- Question - Usar DisplayNumber en lugar de CurrentQuestion.Number -->
                     <Border Background="White" CornerRadius="8" Padding="20" Margin="0,0,0,20">
                         <StackPanel>
-                            <TextBlock Text="{Binding CurrentQuestion.Number, StringFormat='Pregunta {0}'}" 
+                            <TextBlock Text="{Binding DisplayQuestion.DisplayNumber, StringFormat='Pregunta {0}'}" 
                                        FontWeight="Bold" FontSize="12" Foreground="Gray"/>
-                            <TextBlock Text="{Binding CurrentQuestion.Statement}" 
+                            <TextBlock Text="{Binding DisplayQuestion.Statement}" 
                                        FontSize="16" TextWrapping="Wrap" Margin="0,10,0,0"/>
                         </StackPanel>
                     </Border>
 
-                    <!-- Options - Mejorado alineamiento -->
+                    <!-- Options -->
                     <StackPanel>
                         <RadioButton GroupName="Answer" Margin="0,4" 
                                      IsChecked="{Binding IsOptionASelected, Mode=TwoWay}"
@@ -103,9 +103,9 @@
                             <TextBlock Text="{Binding DisplayCorrectAnswer, StringFormat='La respuesta correcta es: {0}'}" 
                                        Margin="0,5,0,0" TextWrapping="Wrap"
                                        Visibility="{Binding IsCorrect, Converter={StaticResource BoolToVisibilityInverseConverter}}"/>
-                            <TextBlock Text="{Binding CurrentQuestion.Source, StringFormat='Fuente: {0}'}" 
+                            <TextBlock Text="{Binding DisplayQuestion.Source, StringFormat='Fuente: {0}'}" 
                                        Margin="0,10,0,0" FontStyle="Italic" Foreground="Gray" TextWrapping="Wrap"
-                                       Visibility="{Binding CurrentQuestion.Source, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                       Visibility="{Binding DisplayQuestion.Source, Converter={StaticResource NullToVisibilityConverter}}"/>
                         </StackPanel>
                     </Border>
 
@@ -158,7 +158,7 @@
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Review Panel -->
+                    <!-- Review Panel - Usar DisplayNumber -->
                     <Grid Visibility="{Binding ShowReviewMode, Converter={StaticResource BoolToVisibilityConverter}}"
                           MinWidth="600" MaxWidth="800">
                         <Grid.RowDefinitions>
@@ -187,7 +187,8 @@
                                             </Border.Style>
                                             <StackPanel>
                                                 <Grid>
-                                                    <TextBlock Text="{Binding Question.Number, StringFormat='Pregunta {0}'}" 
+                                                    <!-- Mostrar DisplayNumber en lugar de Question.Number -->
+                                                    <TextBlock Text="{Binding DisplayNumber, StringFormat='Pregunta {0}'}" 
                                                                FontWeight="Bold" FontSize="12" Foreground="#666"/>
                                                     <TextBlock HorizontalAlignment="Right" FontWeight="Bold">
                                                         <TextBlock.Style>
