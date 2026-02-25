@@ -162,7 +162,7 @@ public partial class DeckListViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void DeleteDeck(Deck deck)
+    private async Task DeleteDeck(Deck deck)
     {
         // Si el mazo tiene archivos, pedir confirmación
         if (deck.Files.Count > 0)
@@ -172,8 +172,17 @@ public partial class DeckListViewModel : ObservableObject
         }
         else
         {
-            // Si no tiene archivos, borrar directamente
-            _ = ConfirmDeleteDeck();
+            // Eliminar directamente y recargar la lista
+            await _deckService.DeleteDeckAsync(deck.Id);
+
+            // Si el mazo eliminado estaba seleccionado, limpiamos la selección
+            if (SelectedDeck != null && SelectedDeck.Id == deck.Id)
+            {
+                SelectedDeck = null;
+            }
+
+            await LoadDecks();
+            StatusMessage = $"🗑️ Mazo '{deck.Name}' eliminado";
         }
     }
 
@@ -184,6 +193,13 @@ public partial class DeckListViewModel : ObservableObject
 
         ShowDeleteDeckDialog = false;
         await _deckService.DeleteDeckAsync(DeckToDelete.Id);
+
+        // Si el mazo eliminado estaba seleccionado, limpiamos la selección
+        if (SelectedDeck != null && SelectedDeck.Id == DeckToDelete.Id)
+        {
+            SelectedDeck = null;
+        }
+
         await LoadDecks();
         StatusMessage = $"🗑️ Mazo '{DeckToDelete.Name}' eliminado";
         DeckToDelete = null;
@@ -199,10 +215,38 @@ public partial class DeckListViewModel : ObservableObject
     [RelayCommand]
     private async Task DeleteFile(QuestionFile file)
     {
-        if (SelectedDeck == null) return;
+        if (SelectedDeck == null || file == null) return;
 
+        // Borrar en BD
         await _questionService.DeleteFileAsync(file.Id);
-        SelectedDeckFiles.Remove(file);
+
+        // Quitar de la lista mostrada a la derecha (SelectedDeckFiles)
+        var toRemove = SelectedDeckFiles?.FirstOrDefault(f => f.Id == file.Id);
+        if (toRemove != null)
+        {
+            SelectedDeckFiles.Remove(toRemove);
+        }
+
+        // Forzar actualización del mazo en la lista principal:
+        // reemplazamos la instancia del Deck en 'Decks' por una nueva copia sin el archivo eliminado.
+        var deckIndex = Decks?.Select((d, i) => (deck: d, index: i)).FirstOrDefault(x => x.deck.Id == SelectedDeck.Id).index ?? -1;
+        if (deckIndex >= 0)
+        {
+            var old = Decks[deckIndex];
+            var newDeck = new Deck
+            {
+                Id = old.Id,
+                Name = old.Name,
+                CreatedAt = old.CreatedAt,
+                Files = old.Files.Where(f => f.Id != file.Id).ToList()
+            };
+
+            Decks[deckIndex] = newDeck;
+
+            // Si el mazo actual era el seleccionado, actualizamos la referencia para que se reevalúen bindings relacionados
+            SelectedDeck = newDeck;
+        }
+
         StatusMessage = $"🗑️ Archivo '{file.Name}' eliminado";
     }
 
