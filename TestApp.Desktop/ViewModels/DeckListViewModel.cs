@@ -208,7 +208,7 @@ public partial class DeckListViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(trimmedName))
         {
-            StatusMessage = "⚠️ El nombre del mazo no puede estar vacío.";
+            StatusMessage = "⚠️ El nombre de la convocatoria no puede estar vacío.";
             return;
         }
 
@@ -218,14 +218,14 @@ public partial class DeckListViewModel : ObservableObject
 
         if (existingDeck != null)
         {
-            StatusMessage = $"⚠️ Ya existe un mazo con el nombre '{trimmedName}'.";
+            StatusMessage = $"⚠️ Ya existe una convocatoria con el nombre '{trimmedName}'.";
             return;
         }
 
         await _deckService.CreateDeckAsync(trimmedName);
         NewDeckName = string.Empty;
         await LoadDecks();
-        StatusMessage = "✅ Mazo creado correctamente";
+        StatusMessage = "✅ Convocatoria creada correctamente";
     }
 
     [RelayCommand]
@@ -251,7 +251,7 @@ public partial class DeckListViewModel : ObservableObject
             }
 
             await LoadDecks();
-            StatusMessage = $"🗑️ Mazo '{deck.Name}' eliminado";
+            StatusMessage = $"🗑️ Convocatoria '{deck.Name}' eliminada";
         }
     }
 
@@ -263,7 +263,7 @@ public partial class DeckListViewModel : ObservableObject
         // Validar que el nombre coincida
         if (!string.Equals(DeleteDeckConfirmName?.Trim(), DeckToDelete.Name, StringComparison.OrdinalIgnoreCase))
         {
-            DeleteDeckError = "El nombre no coincide. Escribe el nombre exacto del mazo.";
+            DeleteDeckError = "El nombre no coincide. Escribe el nombre exacto de la convocatoria.";
             return;
         }
 
@@ -277,7 +277,7 @@ public partial class DeckListViewModel : ObservableObject
         }
 
         await LoadDecks();
-        StatusMessage = $"🗑️ Mazo '{DeckToDelete.Name}' eliminado";
+        StatusMessage = $"🗑️ Convocatoria '{DeckToDelete.Name}' eliminada";
         DeckToDelete = null;
         DeleteDeckConfirmName = string.Empty;
         DeleteDeckError = string.Empty;
@@ -310,7 +310,7 @@ public partial class DeckListViewModel : ObservableObject
         // Re-seleccionar el mazo
         SelectedDeck = Decks.FirstOrDefault(d => d.Id == deckId);
 
-        StatusMessage = $"🗑️ Archivo '{fileName}' eliminado";
+        StatusMessage = $"🗑️ Tema '{fileName}' eliminado";
     }
 
     [RelayCommand]
@@ -415,7 +415,7 @@ public partial class DeckListViewModel : ObservableObject
     {
         if (SelectedDeck == null)
         {
-            StatusMessage = "⚠️ Selecciona un mazo primero";
+            StatusMessage = "⚠️ Selecciona una convocatoria primero";
             return;
         }
 
@@ -479,7 +479,7 @@ public partial class DeckListViewModel : ObservableObject
             }
             else
             {
-                StatusMessage = "⚠️ Todos los archivos seleccionados ya existen en el mazo";
+                StatusMessage = "⚠️ Todos los temas seleccionados ya existen en la convocatoria";
                 PendingPdfImports.Clear();
             }
         }
@@ -534,7 +534,7 @@ public partial class DeckListViewModel : ObservableObject
             SelectedDeck = Decks.FirstOrDefault(d => d.Id == deckId);
 
             IsLoading = false;
-            StatusMessage = $"✅ {importedCount} archivo(s) importado(s) ({totalQuestions} preguntas en total)";
+            StatusMessage = $"✅ {importedCount} tema(s) importado(s) ({totalQuestions} preguntas en total)";
         }
         catch (Exception ex)
         {
@@ -652,7 +652,7 @@ public partial class DeckListViewModel : ObservableObject
         if (SelectedDeck == null) return;
         
         IsLoading = true;
-        LoadingMessage = "Cargando estadísticas del mazo...";
+        LoadingMessage = "Cargando estadísticas de la convocatoria...";
         
         CurrentDeckStatistics = await _statisticsService.GetDeckStatisticsAsync(SelectedDeck.Id);
         CurrentDeckProgressHistory = await _statisticsService.GetDeckProgressHistoryAsync(SelectedDeck.Id, 14);
