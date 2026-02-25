@@ -17,5 +17,9 @@
         <!-- Nuevos converters -->
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
         <converters:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
+        <converters:PercentToHeightConverter x:Key="PercentToHeightConverter"/>
+        <converters:TrendToTextConverter x:Key="TrendToTextConverter"/>
+        <converters:TrendToColorConverter x:Key="TrendToColorConverter"/>
+        <converters:EnumToBoolConverter x:Key="EnumToBoolConverter"/>
     </Application.Resources>
 </Application>

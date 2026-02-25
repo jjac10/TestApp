@@ -40,6 +40,7 @@ public partial class App : Application
         services.AddTransient<IDeckService, DeckService>();
         services.AddTransient<IQuestionService, QuestionService>();
         services.AddTransient<IPdfImportService, PdfImportService>();
+        services.AddTransient<IStatisticsService, StatisticsService>();
 
         // ViewModels
         services.AddSingleton<MainViewModel>();

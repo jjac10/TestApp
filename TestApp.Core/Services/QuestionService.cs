@@ -104,12 +104,21 @@ public class QuestionService : IQuestionService
 
     public async Task DeleteFileAsync(int fileId)
     {
-        var file = await _context.QuestionFiles.FindAsync(fileId);
-        if (file != null)
-        {
-            _context.QuestionFiles.Remove(file);
-            await _context.SaveChangesAsync();
-        }
+        // Usar SQL directo para eliminar en cascada de forma segura
+        // Primero eliminar respuestas
+        await _context.Database.ExecuteSqlRawAsync(@"
+            DELETE FROM Answers 
+            WHERE QuestionId IN (
+                SELECT Id FROM Questions WHERE FileId = {0}
+            )", fileId);
+        
+        // Luego eliminar preguntas
+        await _context.Database.ExecuteSqlRawAsync(
+            "DELETE FROM Questions WHERE FileId = {0}", fileId);
+        
+        // Finalmente eliminar el archivo
+        await _context.Database.ExecuteSqlRawAsync(
+            "DELETE FROM QuestionFiles WHERE Id = {0}", fileId);
     }
 
     private static IQueryable<Question> ApplyFilter(IQueryable<Question> query, QuestionFilter filter)
@@ -129,5 +138,27 @@ public class QuestionService : IQuestionService
         
         question.CorrectAnswer = char.ToUpper(newCorrectAnswer);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<int> CountQuestionsInFileAsync(int fileId, QuestionFilter filter)
+    {
+        var query = _context.Questions
+            .Include(q => q.Answers)
+            .Where(q => q.FileId == fileId);
+
+        query = ApplyFilter(query, filter);
+        
+        return await query.CountAsync();
+    }
+
+    public async Task<int> CountQuestionsInDeckAsync(int deckId, QuestionFilter filter)
+    {
+        var query = _context.Questions
+            .Include(q => q.Answers)
+            .Where(q => q.File.DeckId == deckId);
+
+        query = ApplyFilter(query, filter);
+        
+        return await query.CountAsync();
     }
 }

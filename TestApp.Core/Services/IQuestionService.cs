@@ -19,4 +19,14 @@ public interface IQuestionService
     Task RecordAnswerAsync(int questionId, char userAnswer);
     Task DeleteFileAsync(int fileId);
     Task UpdateCorrectAnswerAsync(int questionId, char newCorrectAnswer);
+    
+    /// <summary>
+    /// Cuenta las preguntas de un archivo según el filtro
+    /// </summary>
+    Task<int> CountQuestionsInFileAsync(int fileId, QuestionFilter filter);
+    
+    /// <summary>
+    /// Cuenta las preguntas de un mazo según el filtro
+    /// </summary>
+    Task<int> CountQuestionsInDeckAsync(int deckId, QuestionFilter filter);
 }
