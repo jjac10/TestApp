@@ -32,9 +32,6 @@ public partial class DeckListViewModel : ObservableObject
     private string _statusMessage = string.Empty;
 
     [ObservableProperty]
-    private int _pdfQuestionCount = 100;
-
-    [ObservableProperty]
     private QuestionFile? _selectedFile;
 
     [ObservableProperty]
@@ -62,9 +59,9 @@ public partial class DeckListViewModel : ObservableObject
     [ObservableProperty]
     private QuestionFile? _examTargetFile;
 
-    // Diálogo de discrepancia de preguntas PDF (cuando hay MÁS preguntas detectadas)
+    // Diálogo de confirmación de importación PDF
     [ObservableProperty]
-    private bool _showPdfMismatchDialog;
+    private bool _showPdfConfirmDialog;
 
     [ObservableProperty]
     private int _pdfDetectedQuestions;
@@ -75,12 +72,12 @@ public partial class DeckListViewModel : ObservableObject
     [ObservableProperty]
     private string _pendingPdfFileName = string.Empty;
 
-    // Diálogo de aviso (cuando hay MENOS preguntas detectadas)
+    // Diálogo de archivo duplicado
     [ObservableProperty]
-    private bool _showPdfWarningDialog;
+    private bool _showDuplicateFileDialog;
 
     [ObservableProperty]
-    private string _warningMessage = string.Empty;
+    private string _duplicateFileName = string.Empty;
 
     // Loading
     [ObservableProperty]
@@ -95,6 +92,12 @@ public partial class DeckListViewModel : ObservableObject
 
     [ObservableProperty]
     private Deck? _deckToDelete;
+
+    [ObservableProperty]
+    private string _deleteDeckConfirmName = string.Empty;
+
+    [ObservableProperty]
+    private string _deleteDeckError = string.Empty;
 
     // Opciones de examen del mazo
     [ObservableProperty]
@@ -164,10 +167,12 @@ public partial class DeckListViewModel : ObservableObject
     [RelayCommand]
     private async Task DeleteDeck(Deck deck)
     {
-        // Si el mazo tiene archivos, pedir confirmación
+        // Si el mazo tiene archivos, pedir confirmación con validación de nombre
         if (deck.Files.Count > 0)
         {
             DeckToDelete = deck;
+            DeleteDeckConfirmName = string.Empty;
+            DeleteDeckError = string.Empty;
             ShowDeleteDeckDialog = true;
         }
         else
@@ -191,6 +196,13 @@ public partial class DeckListViewModel : ObservableObject
     {
         if (DeckToDelete == null) return;
 
+        // Validar que el nombre coincida
+        if (!string.Equals(DeleteDeckConfirmName?.Trim(), DeckToDelete.Name, StringComparison.OrdinalIgnoreCase))
+        {
+            DeleteDeckError = "El nombre no coincide. Escribe el nombre exacto del mazo.";
+            return;
+        }
+
         ShowDeleteDeckDialog = false;
         await _deckService.DeleteDeckAsync(DeckToDelete.Id);
 
@@ -203,6 +215,8 @@ public partial class DeckListViewModel : ObservableObject
         await LoadDecks();
         StatusMessage = $"🗑️ Mazo '{DeckToDelete.Name}' eliminado";
         DeckToDelete = null;
+        DeleteDeckConfirmName = string.Empty;
+        DeleteDeckError = string.Empty;
     }
 
     [RelayCommand]
@@ -210,6 +224,8 @@ public partial class DeckListViewModel : ObservableObject
     {
         ShowDeleteDeckDialog = false;
         DeckToDelete = null;
+        DeleteDeckConfirmName = string.Empty;
+        DeleteDeckError = string.Empty;
     }
 
     [RelayCommand]
@@ -343,82 +359,66 @@ public partial class DeckListViewModel : ObservableObject
 
         if (dialog.ShowDialog() == true)
         {
-            try
+            var fileName = Path.GetFileNameWithoutExtension(dialog.FileName);
+            
+            // Verificar si ya existe un archivo con el mismo nombre en el mazo
+            var existingFile = SelectedDeckFiles.FirstOrDefault(f => 
+                string.Equals(f.Name, fileName, StringComparison.OrdinalIgnoreCase));
+            
+            if (existingFile != null)
             {
-                IsLoading = true;
-                LoadingMessage = "Analizando PDF...";
-                StatusMessage = "⏳ Analizando PDF...";
-                
-                var detectedCount = await _pdfImportService.CountQuestionsInPdfAsync(dialog.FileName);
-
-                IsLoading = false;
-
-                if (detectedCount < PdfQuestionCount)
-                {
-                    // Caso 1: Detectadas MENOS de las configuradas -> Importar las detectadas y avisar
-                    PendingPdfPath = dialog.FileName;
-                    PendingPdfFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
-                    PdfDetectedQuestions = detectedCount;
-                    WarningMessage = $"Se han detectado solo {detectedCount} preguntas de las {PdfQuestionCount} configuradas. Se importarán las {detectedCount} preguntas encontradas.";
-                    ShowPdfWarningDialog = true;
-                }
-                else if (detectedCount > PdfQuestionCount)
-                {
-                    // Caso 2: Detectadas MÁS de las configuradas -> Mostrar diálogo de elección
-                    PendingPdfPath = dialog.FileName;
-                    PendingPdfFileName = Path.GetFileNameWithoutExtension(dialog.FileName);
-                    PdfDetectedQuestions = detectedCount;
-                    ShowPdfMismatchDialog = true;
-                    StatusMessage = $"⚠️ Se detectaron {detectedCount} preguntas, pero configuraste {PdfQuestionCount}";
-                }
-                else
-                {
-                    // Caso 3: Coinciden exactamente -> Importar directamente
-                    await ImportPdfWithCount(dialog.FileName, PdfQuestionCount);
-                }
+                DuplicateFileName = fileName;
+                ShowDuplicateFileDialog = true;
+                return;
             }
-            catch (Exception ex)
-            {
-                IsLoading = false;
-                StatusMessage = $"❌ Error al importar: {ex.Message}";
-            }
+
+            await AnalyzeAndShowConfirmDialog(dialog.FileName, fileName);
+        }
+    }
+
+    private async Task AnalyzeAndShowConfirmDialog(string filePath, string fileName)
+    {
+        try
+        {
+            IsLoading = true;
+            LoadingMessage = "Analizando PDF...";
+            StatusMessage = "⏳ Analizando PDF...";
+            
+            var detectedCount = await _pdfImportService.CountQuestionsInPdfAsync(filePath);
+
+            IsLoading = false;
+
+            // Mostrar diálogo de confirmación con las preguntas detectadas
+            PendingPdfPath = filePath;
+            PendingPdfFileName = fileName;
+            PdfDetectedQuestions = detectedCount;
+            ShowPdfConfirmDialog = true;
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+            StatusMessage = $"❌ Error al importar: {ex.Message}";
         }
     }
 
     [RelayCommand]
-    private async Task ImportDetectedQuestions()
+    private void CloseDuplicateFileDialog()
     {
-        ShowPdfMismatchDialog = false;
-        await ImportPdfWithCount(PendingPdfPath, PdfDetectedQuestions);
+        ShowDuplicateFileDialog = false;
+        DuplicateFileName = string.Empty;
     }
 
     [RelayCommand]
-    private async Task ImportConfiguredQuestions()
+    private async Task ConfirmPdfImport()
     {
-        ShowPdfMismatchDialog = false;
-        await ImportPdfWithCount(PendingPdfPath, PdfQuestionCount);
+        ShowPdfConfirmDialog = false;
+        await ImportPdfWithCount(PendingPdfPath, PdfDetectedQuestions);
     }
 
     [RelayCommand]
     private void CancelPdfImport()
     {
-        ShowPdfMismatchDialog = false;
-        PendingPdfPath = string.Empty;
-        PendingPdfFileName = string.Empty;
-        StatusMessage = "❌ Importación cancelada";
-    }
-
-    [RelayCommand]
-    private async Task AcceptWarningAndImport()
-    {
-        ShowPdfWarningDialog = false;
-        await ImportPdfWithCount(PendingPdfPath, PdfDetectedQuestions);
-    }
-
-    [RelayCommand]
-    private void CancelWarning()
-    {
-        ShowPdfWarningDialog = false;
+        ShowPdfConfirmDialog = false;
         PendingPdfPath = string.Empty;
         PendingPdfFileName = string.Empty;
         StatusMessage = "❌ Importación cancelada";

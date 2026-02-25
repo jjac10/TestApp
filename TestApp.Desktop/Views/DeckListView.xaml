@@ -7,112 +7,335 @@
         <!-- Contenido principal -->
         <Grid Margin="20" IsEnabled="{Binding IsLoading, Converter={StaticResource BoolInverseConverter}}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="280" MinWidth="250" MaxWidth="350"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left Panel: Deck List -->
-            <Border Grid.Column="0" Background="#F5F5F5" CornerRadius="8" Padding="15" Margin="0,0,10,0">
-                <StackPanel>
-                    <TextBlock Text="Mis Mazos" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+            <!-- Left Panel: Deck List (más compacto) -->
+            <Border Grid.Column="0" Background="#FAFAFA" CornerRadius="12" Margin="0,0,10,0"
+                    BorderBrush="#E0E0E0" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Border Grid.Row="0" Background="#3F51B5" CornerRadius="12,12,0,0" Padding="15,12">
+                        <TextBlock Text="📚 Mis Mazos" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                    </Border>
 
                     <!-- Create new deck -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                        <TextBox Text="{Binding NewDeckName, UpdateSourceTrigger=PropertyChanged}" 
-                                 Width="200" Padding="8" VerticalContentAlignment="Center"/>
-                        <Button Content="➕ Crear Mazo" Margin="10,0,0,0" Padding="10,8"
-                                Command="{Binding CreateDeckCommand}"/>
-                    </StackPanel>
+                    <Border Grid.Row="1" Padding="12,10" Background="#F5F5F5">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding NewDeckName, UpdateSourceTrigger=PropertyChanged}" 
+                                     Padding="8,6" VerticalContentAlignment="Center"
+                                     FontSize="12"/>
+                            <Button Grid.Column="1" Content="➕" Margin="8,0,0,0" Padding="10,6"
+                                    ToolTip="Crear nuevo mazo"
+                                    Command="{Binding CreateDeckCommand}"
+                                    Background="#4CAF50" Foreground="White" FontWeight="Bold"
+                                    BorderThickness="0"/>
+                        </Grid>
+                    </Border>
 
-                    <!-- Deck list -->
-                    <ListBox ItemsSource="{Binding Decks}" 
+                    <!-- Deck list con archivos visibles -->
+                    <ListBox Grid.Row="2" ItemsSource="{Binding Decks}" 
                              SelectedItem="{Binding SelectedDeck}"
-                             Height="350" BorderThickness="0" Background="Transparent">
+                             BorderThickness="0" Background="Transparent"
+                             Padding="8" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0,0,0,6"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Bd" Background="White" CornerRadius="8" 
+                                                    BorderBrush="#E8E8E8" BorderThickness="1"
+                                                    Padding="10">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#2196F3"/>
+                                                    <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#F5F5F5"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="White" CornerRadius="5" Padding="10" Margin="0,2">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
-                                            <TextBlock Text="{Binding Files.Count, StringFormat='{}{0} archivos'}" 
-                                                       Foreground="Gray" FontSize="12"/>
-                                        </StackPanel>
-                                        <Button Grid.Column="1" Content="🗑️" 
-                                                Command="{Binding DataContext.DeleteDeckCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                CommandParameter="{Binding}"
-                                                Background="Transparent" BorderThickness="0"/>
-                                    </Grid>
-                                </Border>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Nombre del mazo y contador -->
+                                    <StackPanel Grid.Row="0" Grid.Column="0">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Foreground="#757575" FontSize="11" Margin="0,2,0,0">
+                                            <Run Text="{Binding Files.Count, Mode=OneWay}"/>
+                                            <Run Text=" archivo(s)"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    
+                                    <!-- Botón eliminar -->
+                                    <Button Grid.Row="0" Grid.Column="1" Content="🗑️" 
+                                            VerticalAlignment="Top"
+                                            Command="{Binding DataContext.DeleteDeckCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                            CommandParameter="{Binding}"
+                                            Background="Transparent" BorderThickness="0" 
+                                            FontSize="12" Cursor="Hand" Opacity="0.6"
+                                            ToolTip="Eliminar mazo"/>
+                                    
+                                    <!-- Lista de archivos del mazo (compacta) -->
+                                    <ItemsControl Grid.Row="1" Grid.ColumnSpan="2" 
+                                                  ItemsSource="{Binding Files}" 
+                                                  Margin="0,6,0,0"
+                                                  Visibility="{Binding Files.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#F0F4F8" CornerRadius="4" 
+                                                        Padding="6,3" Margin="0,2,0,0">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="📄" FontSize="10" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Name}" 
+                                                                   FontSize="11" Foreground="#555"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   VerticalAlignment="Center"
+                                                                   ToolTip="{Binding Name}"/>
+                                                        <TextBlock Grid.Column="2" Foreground="#888" 
+                                                                   FontSize="10" VerticalAlignment="Center"
+                                                                   Margin="4,0,0,0">
+                                                            <Run Text="("/>
+                                                            <Run Text="{Binding Questions.Count, Mode=OneWay}"/>
+                                                            <Run Text=")"/>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-                </StackPanel>
+                </Grid>
             </Border>
 
-            <!-- Right Panel: Deck Details -->
-            <Border Grid.Column="1" Background="#F5F5F5" CornerRadius="8" Padding="15" Margin="10,0,0,0">
+            <!-- Right Panel: Deck Details (más amplio y vistoso) -->
+            <Border Grid.Column="1" Background="#FFFFFF" CornerRadius="12" Margin="10,0,0,0"
+                    BorderBrush="#E0E0E0" BorderThickness="1">
                 <Grid>
                     <!-- Main Deck Details -->
-                    <StackPanel Visibility="{Binding ShowQuestionList, Converter={StaticResource BoolToVisibilityInverseConverter}}">
-                        <TextBlock Text="Detalles del Mazo" FontSize="18" FontWeight="Bold" Margin="0,0,0,15"/>
+                    <Grid Visibility="{Binding ShowQuestionList, Converter={StaticResource BoolToVisibilityInverseConverter}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                        <StackPanel Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityConverter}, FallbackValue=Collapsed}">
-                            <TextBlock Text="{Binding SelectedDeck.Name}" FontSize="16" FontWeight="SemiBold"/>
+                        <!-- Header del panel derecho -->
+                        <Border Grid.Row="0" Background="#3F51B5" CornerRadius="12,12,0,0" Padding="20,15">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="📋 Detalles del Mazo" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="{Binding SelectedDeck.Name}" FontSize="20" FontWeight="Bold" 
+                                               Foreground="White" Margin="0,5,0,0"
+                                               Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                </StackPanel>
+                                <!-- Botón importar en header -->
+                                <Button Grid.Column="1" Padding="15,10" VerticalAlignment="Center"
+                                        Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                        Command="{Binding ImportFileCommand}"
+                                        Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityConverter}}"
+                                        Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="📁" Margin="0,0,6,0"/>
+                                        <TextBlock Text="Importar PDF" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
 
-                            <!-- PDF Import Section -->
-                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                <TextBlock Text="Nº preguntas:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBox Text="{Binding PdfQuestionCount, UpdateSourceTrigger=PropertyChanged}" 
-                                         Width="60" Padding="8" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-                                <Button Content="📁 Importar PDF" Margin="10,0,0,0" Padding="15,10"
-                                        Command="{Binding ImportFileCommand}"/>
+                        <!-- Contenido -->
+                        <Grid Grid.Row="1" Margin="20">
+                            <!-- Mensaje cuando no hay mazo seleccionado -->
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityInverseConverter}}">
+                                <TextBlock Text="📚" FontSize="64" HorizontalAlignment="Center" Opacity="0.3"/>
+                                <TextBlock Text="Selecciona un mazo para ver sus detalles" 
+                                           FontSize="16" Foreground="#9E9E9E" Margin="0,15,0,0"
+                                           HorizontalAlignment="Center"/>
                             </StackPanel>
 
-                            <TextBlock Text="Archivos:" FontWeight="SemiBold" Margin="0,20,0,10"/>
-                            <ListBox ItemsSource="{Binding SelectedDeckFiles}" Height="200" BorderThickness="0" Background="Transparent">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Background="White" CornerRadius="5" Padding="10" Margin="0,2">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel>
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="{Binding Questions.Count, StringFormat='{}{0} preguntas'}" 
-                                                               Foreground="Gray" FontSize="12"/>
-                                                </StackPanel>
-                                                <Button Grid.Column="1" Content="▶️" ToolTip="Iniciar examen"
-                                                        Command="{Binding DataContext.ShowExamOptionsDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Background="Transparent" BorderThickness="0" FontSize="14" Margin="5,0"/>
-                                                <Button Grid.Column="2" Content="👁️" ToolTip="Ver preguntas"
-                                                        Command="{Binding DataContext.ShowFileQuestionsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Background="Transparent" BorderThickness="0" FontSize="14" Margin="5,0"/>
-                                                <Button Grid.Column="3" Content="🗑️" ToolTip="Eliminar archivo"
-                                                        Command="{Binding DataContext.DeleteFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        Background="Transparent" BorderThickness="0"/>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                            <!-- Contenido del mazo seleccionado -->
+                            <Grid Visibility="{Binding SelectedDeck, Converter={StaticResource NullToVisibilityConverter}}">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                            <Button Content="🎯 Iniciar Examen del Mazo" Margin="0,20,0,0" Padding="20,12"
-                                    FontSize="14" FontWeight="Bold" Background="#4CAF50" Foreground="White"
-                                    HorizontalAlignment="Left"
-                                    Command="{Binding StartDeckExamCommand}"/>
-                        </StackPanel>
-                    </StackPanel>
+                                <!-- Stats rápidos -->
+                                <Border Grid.Row="0" Background="#F5F5F5" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <StackPanel Margin="0,0,30,0" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding SelectedDeckFiles.Count}" 
+                                                       FontSize="28" FontWeight="Bold" Foreground="#3F51B5"
+                                                       HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Archivos" FontSize="12" Foreground="#757575"
+                                                       HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                        <Border Width="1" Background="#E0E0E0" Margin="0,5"/>
+                                        <StackPanel Margin="30,0,0,0" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding SelectedDeckFiles, Converter={StaticResource CountToStringConverter}}" 
+                                                       FontSize="28" FontWeight="Bold" Foreground="#4CAF50"
+                                                       HorizontalAlignment="Center"/>
+                                            <TextBlock Text="Preguntas" FontSize="12" Foreground="#757575"
+                                                       HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Lista de archivos -->
+                                <Grid Grid.Row="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <TextBlock Text="📂 Archivos del mazo" FontWeight="SemiBold" FontSize="14" 
+                                               Margin="0,0,0,10" Foreground="#424242"/>
+                                    
+                                    <!-- Mensaje si no hay archivos -->
+                                    <Border Grid.Row="1" Background="#FAFAFA" CornerRadius="8" Padding="30"
+                                            Visibility="{Binding SelectedDeckFiles.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock Text="📄" FontSize="40" HorizontalAlignment="Center" Opacity="0.4"/>
+                                            <TextBlock Text="No hay archivos en este mazo" 
+                                                       FontSize="14" Foreground="#9E9E9E" Margin="0,10,0,0"/>
+                                            <TextBlock Text="Importa un PDF para comenzar" 
+                                                       FontSize="12" Foreground="#BDBDBD" Margin="0,5,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Lista de archivos -->
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                                  Visibility="{Binding SelectedDeckFiles.Count, Converter={StaticResource CountToVisibilityConverter}}">
+                                        <ItemsControl ItemsSource="{Binding SelectedDeckFiles}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#FAFAFA" CornerRadius="8" Padding="12" Margin="0,0,0,8"
+                                                            BorderBrush="#E8E8E8" BorderThickness="1">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                                <ColumnDefinition Width="Auto"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            
+                                                            <!-- Icono -->
+                                                            <Border Grid.Column="0" Background="#E3F2FD" CornerRadius="6" 
+                                                                    Width="40" Height="40" Margin="0,0,12,0">
+                                                                <TextBlock Text="📄" FontSize="18" 
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            
+                                                            <!-- Info del archivo -->
+                                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                                                    <Border Background="#E8F5E9" CornerRadius="3" Padding="6,2">
+                                                                        <TextBlock FontSize="11" Foreground="#2E7D32">
+                                                                            <Run Text="{Binding Questions.Count, Mode=OneWay}"/>
+                                                                            <Run Text=" preguntas"/>
+                                                                        </TextBlock>
+                                                                    </Border>
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                            
+                                                            <!-- Botones de acción -->
+                                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Button Content="▶️" ToolTip="Iniciar examen" Padding="8,6"
+                                                                        Command="{Binding DataContext.ShowExamOptionsDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Background="#E8F5E9" BorderThickness="0" Margin="0,0,4,0"
+                                                                        Cursor="Hand"/>
+                                                                <Button Content="👁️" ToolTip="Ver preguntas" Padding="8,6"
+                                                                        Command="{Binding DataContext.ShowFileQuestionsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Background="#E3F2FD" BorderThickness="0" Margin="0,0,4,0"
+                                                                        Cursor="Hand"/>
+                                                                <Button Content="🗑️" ToolTip="Eliminar archivo" Padding="8,6"
+                                                                        Command="{Binding DataContext.DeleteFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Background="#FFEBEE" BorderThickness="0"
+                                                                        Cursor="Hand"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Grid>
+
+                                <!-- Botón iniciar examen del mazo -->
+                                <Button Grid.Row="2" Margin="0,15,0,0" Padding="20,14"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding StartDeckExamCommand}"
+                                        Cursor="Hand" BorderThickness="0">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#4CAF50"/>
+                                            <Setter Property="IsEnabled" Value="True"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedDeckFiles.Count}" Value="0">
+                                                    <Setter Property="Background" Value="#E0E0E0"/>
+                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="🎯" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Iniciar Examen del Mazo" FontSize="14" FontWeight="Bold" 
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </Grid>
 
                     <!-- Question List Panel -->
                     <Grid Visibility="{Binding ShowQuestionList, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -121,52 +344,67 @@
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
                         
-                        <Grid Row="0" Margin="0,0,0,15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding SelectedFile.Name, StringFormat='Preguntas: {0}'}" FontSize="18" FontWeight="Bold"/>
-                            <Button Grid.Column="1" Padding="10,5" Margin="0,0,10,0"
-                                    Command="{Binding ToggleEditModeCommand}">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Content" Value="✏️ Editar"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsEditMode}" Value="True">
-                                                <Setter Property="Content" Value="👁️ Solo ver"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                            <Button Grid.Column="2" Content="✖️ Cerrar" Padding="10,5"
-                                    Command="{Binding CloseQuestionListCommand}"/>
-                        </Grid>
+                        <!-- Header -->
+                        <Border Grid.Row="0" Background="#3F51B5" CornerRadius="12,12,0,0" Padding="20,15">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="📝 Preguntas" FontSize="14" Foreground="#B3E5FC"/>
+                                    <TextBlock Text="{Binding SelectedFile.Name}" FontSize="18" FontWeight="Bold" 
+                                               Foreground="White" Margin="0,3,0,0"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Padding="12,8" Margin="0,0,10,0"
+                                        Background="Transparent" Foreground="White" BorderThickness="1"
+                                        BorderBrush="#FFFFFF50"
+                                        Command="{Binding ToggleEditModeCommand}" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Content" Value="✏️ Editar"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                                    <Setter Property="Content" Value="👁️ Solo ver"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Grid.Column="2" Content="✖️ Cerrar" Padding="12,8"
+                                        Background="#F44336" Foreground="White" BorderThickness="0"
+                                        Command="{Binding CloseQuestionListCommand}" Cursor="Hand"/>
+                            </Grid>
+                        </Border>
 
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
                             <ItemsControl ItemsSource="{Binding QuestionsToShow}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="White" CornerRadius="5" Padding="12" Margin="0,0,0,8">
+                                        <Border Background="#FAFAFA" CornerRadius="8" Padding="15" Margin="0,0,0,10"
+                                                BorderBrush="#E8E8E8" BorderThickness="1">
                                             <StackPanel>
-                                                <TextBlock Text="{Binding Question.Number, StringFormat='Pregunta {0}'}" 
-                                                           FontWeight="Bold" FontSize="12" Foreground="#666"/>
-                                                <TextBlock Text="{Binding Question.Statement}" TextWrapping="Wrap" Margin="0,5,0,8"/>
+                                                <Border Background="#3F51B5" CornerRadius="4" Padding="8,4" 
+                                                        HorizontalAlignment="Left" Margin="0,0,0,10">
+                                                    <TextBlock Text="{Binding Question.Number, StringFormat='Pregunta {0}'}" 
+                                                               FontWeight="Bold" FontSize="11" Foreground="White"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding Question.Statement}" TextWrapping="Wrap" 
+                                                           Margin="0,0,0,12" FontSize="13"/>
                                                 <StackPanel Margin="10,0,0,0">
-                                                    <TextBlock Text="{Binding Question.OptionA, StringFormat='A) {0}'}" TextWrapping="Wrap" Margin="0,2"
+                                                    <TextBlock Text="{Binding Question.OptionA, StringFormat='A) {0}'}" TextWrapping="Wrap" Margin="0,3"
                                                                Foreground="{Binding Question.CorrectAnswer, Converter={StaticResource CorrectAnswerColorConverter}, ConverterParameter=A}"/>
-                                                    <TextBlock Text="{Binding Question.OptionB, StringFormat='B) {0}'}" TextWrapping="Wrap" Margin="0,2"
+                                                    <TextBlock Text="{Binding Question.OptionB, StringFormat='B) {0}'}" TextWrapping="Wrap" Margin="0,3"
                                                                Foreground="{Binding Question.CorrectAnswer, Converter={StaticResource CorrectAnswerColorConverter}, ConverterParameter=B}"/>
-                                                    <TextBlock Text="{Binding Question.OptionC, StringFormat='C) {0}'}" TextWrapping="Wrap" Margin="0,2"
+                                                    <TextBlock Text="{Binding Question.OptionC, StringFormat='C) {0}'}" TextWrapping="Wrap" Margin="0,3"
                                                                Foreground="{Binding Question.CorrectAnswer, Converter={StaticResource CorrectAnswerColorConverter}, ConverterParameter=C}"/>
-                                                    <TextBlock Text="{Binding Question.OptionD, StringFormat='D) {0}'}" TextWrapping="Wrap" Margin="0,2"
+                                                    <TextBlock Text="{Binding Question.OptionD, StringFormat='D) {0}'}" TextWrapping="Wrap" Margin="0,3"
                                                                Foreground="{Binding Question.CorrectAnswer, Converter={StaticResource CorrectAnswerColorConverter}, ConverterParameter=D}"/>
                                                 </StackPanel>
                                                 
-                                                <!-- Edit Mode: Cambiar respuesta correcta -->
-                                                <Border Background="#FFF3E0" CornerRadius="5" Padding="10" Margin="0,10,0,0"
+                                                <!-- Edit Mode -->
+                                                <Border Background="#FFF3E0" CornerRadius="6" Padding="12" Margin="0,12,0,0"
                                                         Visibility="{Binding DataContext.IsEditMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}">
                                                     <StackPanel>
                                                         <TextBlock Text="Cambiar respuesta correcta:" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
@@ -179,17 +417,18 @@
                                                                          IsChecked="{Binding SelectedAnswer, Converter={StaticResource CharToBoolConverter}, ConverterParameter=C}"/>
                                                             <RadioButton Content="D" GroupName="{Binding Question.Id}" Margin="0,0,15,0"
                                                                          IsChecked="{Binding SelectedAnswer, Converter={StaticResource CharToBoolConverter}, ConverterParameter=D}"/>
-                                                            <Button Content="💾 Guardar" Padding="10,3"
+                                                            <Button Content="💾 Guardar" Padding="10,5"
                                                                     Command="{Binding DataContext.SaveCorrectAnswerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                    CommandParameter="{Binding}"/>
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="#4CAF50" Foreground="White" BorderThickness="0"/>
                                                         </StackPanel>
                                                     </StackPanel>
                                                 </Border>
                                                 
                                                 <TextBlock Text="{Binding Question.Source, StringFormat='📚 Fuente: {0}'}" 
-                                                           FontStyle="Italic" Foreground="#666" Margin="0,8,0,0"
+                                                           FontStyle="Italic" Foreground="#666" Margin="0,10,0,0"
                                                            Visibility="{Binding Question.Source, Converter={StaticResource NullToVisibilityConverter}}"
-                                                           TextWrapping="Wrap"/>
+                                                           TextWrapping="Wrap" FontSize="12"/>
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>
@@ -204,7 +443,7 @@
         <!-- Loading Overlay -->
         <Border Background="#CC000000"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="30"
+            <Border Background="White" CornerRadius="12" Padding="40"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel HorizontalAlignment="Center">
                     <TextBlock Text="⏳" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,15"/>
@@ -215,10 +454,10 @@
             </Border>
         </Border>
 
-        <!-- Fondo semitransparente para diálogo de opciones de examen -->
+        <!-- Diálogo de opciones de examen -->
         <Border Background="#80000000"
                 Visibility="{Binding ShowExamOptions, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
+            <Border Background="White" CornerRadius="12" Padding="25"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
@@ -242,10 +481,10 @@
                                     <TextBlock.ToolTip>
                                         <ToolTip>
                                             <StackPanel MaxWidth="300">
-                                                <TextBlock Text="Modo Revisión (activado):" FontWeight="Bold" Margin="0,0,0,5"/>
+                                                <TextBlock Text="Activado (Modo Revisión):" FontWeight="Bold" Margin="0,0,0,5"/>
                                                 <TextBlock Text="Verás la respuesta correcta después de cada pregunta." TextWrapping="Wrap"/>
                                                 <TextBlock Text=" " />
-                                                <TextBlock Text="Modo Examen Final (desactivado):" FontWeight="Bold" Margin="0,5,0,5"/>
+                                                <TextBlock Text="Desactivado (Modo Examen Final):" FontWeight="Bold" Margin="0,5,0,5"/>
                                                 <TextBlock Text="Las respuestas se mostrarán solo al finalizar el examen completo." TextWrapping="Wrap"/>
                                             </StackPanel>
                                         </ToolTip>
@@ -259,23 +498,23 @@
                         <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
                                 Command="{Binding CancelExamOptionsCommand}"/>
                         <Button Content="▶️ Iniciar" Padding="15,8" 
-                                Background="#4CAF50" Foreground="White"
+                                Background="#4CAF50" Foreground="White" BorderThickness="0"
                                 Command="{Binding StartExamWithOptionsCommand}"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
         </Border>
 
-        <!-- Diálogo de advertencia (detectadas MENOS preguntas) -->
+        <!-- Diálogo de confirmación de importación PDF -->
         <Border Background="#80000000"
-                Visibility="{Binding ShowPdfWarningDialog, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
+                Visibility="{Binding ShowPdfConfirmDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="White" CornerRadius="12" Padding="25"
                     HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="450">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
                 </Border.Effect>
                 <StackPanel>
-                    <TextBlock Text="ℹ️ Aviso de Importación" 
+                    <TextBlock Text="📥 Confirmar Importación" 
                                FontSize="16" FontWeight="Bold" Foreground="#2196F3" Margin="0,0,0,15"/>
                     
                     <TextBlock FontWeight="SemiBold" Margin="0,0,0,15">
@@ -284,81 +523,20 @@
                         <Run Text=".pdf"/>
                     </TextBlock>
                     
-                    <Border Background="#E3F2FD" CornerRadius="5" Padding="15" Margin="0,0,0,20">
-                        <TextBlock Text="{Binding WarningMessage}" TextWrapping="Wrap" 
-                                   Foreground="#1976D2" FontSize="13"/>
+                    <Border Background="#E3F2FD" CornerRadius="6" Padding="15" Margin="0,0,0,20">
+                        <TextBlock TextWrapping="Wrap" Foreground="#1976D2" FontSize="13">
+                            <Run Text="Se han detectado "/>
+                            <Run Text="{Binding PdfDetectedQuestions, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text=" preguntas en el archivo."/>
+                        </TextBlock>
                     </Border>
                     
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
-                                Command="{Binding CancelWarningCommand}"/>
-                        <Button Content="✅ Aceptar e Importar" Padding="15,8" 
-                                Background="#4CAF50" Foreground="White"
-                                Command="{Binding AcceptWarningAndImportCommand}"/>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-        </Border>
-
-        <!-- Diálogo de discrepancia (detectadas MÁS preguntas) -->
-        <Border Background="#80000000"
-                Visibility="{Binding ShowPdfMismatchDialog, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
-                    HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
-                </Border.Effect>
-                <StackPanel MinWidth="400">
-                    <TextBlock Text="⚠️ Discrepancia en número de preguntas" 
-                               FontSize="16" FontWeight="Bold" Foreground="#F57C00" Margin="0,0,0,15"/>
-                    
-                    <TextBlock FontWeight="SemiBold" Margin="0,0,0,15">
-                        <Run Text="Archivo: "/>
-                        <Run Text="{Binding PendingPdfFileName, Mode=OneWay}"/>
-                        <Run Text=".pdf"/>
-                    </TextBlock>
-                    
-                    <Border Background="#FFF3E0" CornerRadius="5" Padding="12" Margin="0,0,0,15">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                <TextBlock Text="Configuradas: " Foreground="#666"/>
-                                <TextBlock Text="{Binding PdfQuestionCount}" FontWeight="Bold"/>
-                                <TextBlock Text=" preguntas" Foreground="#666"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Detectadas: " Foreground="#666"/>
-                                <TextBlock Text="{Binding PdfDetectedQuestions}" FontWeight="Bold" Foreground="#4CAF50"/>
-                                <TextBlock Text=" preguntas" Foreground="#666"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-                    
-                    <TextBlock Text="¿Cuántas preguntas deseas importar?" Margin="0,0,0,15" FontWeight="SemiBold"/>
-                    
-                    <StackPanel>
-                        <Button Padding="12,10" Margin="0,0,0,8"
-                                HorizontalContentAlignment="Left"
-                                Command="{Binding ImportDetectedQuestionsCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📥 Importar " />
-                                <TextBlock Text="{Binding PdfDetectedQuestions}" FontWeight="Bold"/>
-                                <TextBlock Text=" (todas las detectadas)"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button Padding="12,10" Margin="0,0,0,8"
-                                HorizontalContentAlignment="Left"
-                                Command="{Binding ImportConfiguredQuestionsCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📋 Importar solo "/>
-                                <TextBlock Text="{Binding PdfQuestionCount}" FontWeight="Bold"/>
-                                <TextBlock Text=" (las configuradas)"/>
-                            </StackPanel>
-                        </Button>
-                        
-                        <Button Content="❌ Cancelar" Padding="12,10"
-                                HorizontalContentAlignment="Left"
                                 Command="{Binding CancelPdfImportCommand}"/>
+                        <Button Content="✅ Importar" Padding="15,8" 
+                                Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                Command="{Binding ConfirmPdfImportCommand}"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -367,38 +545,49 @@
         <!-- Diálogo de confirmación de borrado de mazo -->
         <Border Background="#80000000"
                 Visibility="{Binding ShowDeleteDeckDialog, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
+            <Border Background="White" CornerRadius="12" Padding="25"
                     HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="450">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
                 </Border.Effect>
                 <StackPanel>
-                    <TextBlock Text="⚠️ Confirmar Eliminación" 
+                    <TextBlock Text="⚠️ Eliminar Mazo Permanentemente" 
                                FontSize="16" FontWeight="Bold" Foreground="#F44336" Margin="0,0,0,15"/>
                     
-                    <TextBlock FontWeight="SemiBold" Margin="0,0,0,10">
+                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
                         <Run Text="¿Estás seguro de que deseas eliminar el mazo "/>
-                        <Run Text="{Binding DeckToDelete.Name, Mode=OneWay}" FontWeight="Bold"/>
+                        <Run Text="{Binding DeckToDelete.Name, Mode=OneWay}" FontWeight="Bold" Foreground="#F44336"/>
                         <Run Text="?"/>
                     </TextBlock>
                     
-                    <Border Background="#FFEBEE" CornerRadius="5" Padding="15" Margin="0,0,0,20">
+                    <Border Background="#FFEBEE" CornerRadius="6" Padding="15" Margin="0,0,0,15">
                         <StackPanel>
                             <TextBlock TextWrapping="Wrap" Foreground="#C62828" FontSize="13" Margin="0,0,0,8">
                                 <Run Text="Este mazo contiene "/>
                                 <Run Text="{Binding DeckToDelete.Files.Count, Mode=OneWay}" FontWeight="Bold"/>
                                 <Run Text=" archivo(s) con todas sus preguntas."/>
                             </TextBlock>
-                            <TextBlock Text="Esta acción no se puede deshacer." 
+                            <TextBlock Text="⚠️ Esta acción no se puede deshacer." 
                                        TextWrapping="Wrap" Foreground="#C62828" FontSize="13" FontWeight="Bold"/>
                         </StackPanel>
                     </Border>
                     
+                    <!-- Validación de nombre -->
+                    <TextBlock Text="Para confirmar, escribe el nombre del mazo:" 
+                               FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBox Text="{Binding DeleteDeckConfirmName, UpdateSourceTrigger=PropertyChanged}" 
+                             Padding="10" FontSize="14" Margin="0,0,0,5"/>
+                    
+                    <!-- Mensaje de error -->
+                    <TextBlock Text="{Binding DeleteDeckError}" 
+                               Foreground="#F44336" FontSize="12" Margin="0,0,0,15"
+                               Visibility="{Binding DeleteDeckError, Converter={StaticResource NullToVisibilityConverter}}"/>
+                    
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
                                 Command="{Binding CancelDeleteDeckCommand}"/>
-                        <Button Content="🗑️ Eliminar" Padding="15,8" 
-                                Background="#F44336" Foreground="White"
+                        <Button Content="🗑️ Eliminar Definitivamente" Padding="15,8" 
+                                Background="#F44336" Foreground="White" BorderThickness="0"
                                 Command="{Binding ConfirmDeleteDeckCommand}"/>
                     </StackPanel>
                 </StackPanel>
@@ -408,7 +597,7 @@
         <!-- Diálogo de opciones del examen del mazo -->
         <Border Background="#80000000"
                 Visibility="{Binding ShowDeckExamOptions, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Border Background="White" CornerRadius="10" Padding="25"
+            <Border Background="White" CornerRadius="12" Padding="25"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
@@ -421,7 +610,7 @@
                         <Run Text="{Binding SelectedDeck.Name, Mode=OneWay}"/>
                     </TextBlock>
                     
-                    <Border Background="#E8F5E9" CornerRadius="5" Padding="12" Margin="0,0,0,15">
+                    <Border Background="#E8F5E9" CornerRadius="6" Padding="12" Margin="0,0,0,15">
                         <TextBlock>
                             <Run Text="Total de preguntas disponibles: "/>
                             <Run Text="{Binding SelectedDeckFiles, Converter={StaticResource CountToStringConverter}, Mode=OneWay}" FontWeight="Bold"/>
@@ -470,9 +659,42 @@
                         <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
                                 Command="{Binding CancelDeckExamOptionsCommand}"/>
                         <Button Content="▶️ Iniciar Examen" Padding="15,8" 
-                                Background="#4CAF50" Foreground="White"
+                                Background="#4CAF50" Foreground="White" BorderThickness="0"
                                 Command="{Binding StartDeckExamWithOptionsCommand}"/>
                     </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- Diálogo de archivo duplicado -->
+        <Border Background="#80000000"
+                Visibility="{Binding ShowDuplicateFileDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="White" CornerRadius="12" Padding="25"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="450">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="⚠️ Archivo Duplicado" 
+                               FontSize="16" FontWeight="Bold" Foreground="#FF9800" Margin="0,0,0,15"
+                               HorizontalAlignment="Center"/>
+                    
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,15">
+                        <Run Text="Ya existe un archivo con el nombre "/>
+                        <Run Text="{Binding DuplicateFileName, Mode=OneWay}" FontWeight="Bold" Foreground="#FF9800"/>
+                        <Run Text=" en este mazo."/>
+                    </TextBlock>
+                    
+                    <Border Background="#FFF3E0" CornerRadius="6" Padding="15" Margin="0,0,0,20">
+                        <TextBlock Text="Si deseas reemplazarlo, primero elimina el archivo existente y luego importa el nuevo." 
+                                   TextWrapping="Wrap" Foreground="#E65100" FontSize="13"
+                                   TextAlignment="Center"/>
+                    </Border>
+                    
+                    <Button Content="Entendido" Padding="20,10" 
+                            HorizontalAlignment="Center"
+                            Background="#FF9800" Foreground="White" BorderThickness="0"
+                            Command="{Binding CloseDuplicateFileDialogCommand}"/>
                 </StackPanel>
             </Border>
         </Border>
