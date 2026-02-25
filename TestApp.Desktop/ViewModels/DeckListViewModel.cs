@@ -79,6 +79,16 @@ public partial class DeckListViewModel : ObservableObject
     [ObservableProperty]
     private string _pendingPdfFileName = string.Empty;
 
+    // Importación múltiple de PDFs
+    [ObservableProperty]
+    private ObservableCollection<PdfImportInfo> _pendingPdfImports = [];
+
+    [ObservableProperty]
+    private int _totalDetectedQuestions;
+
+    [ObservableProperty]
+    private int _duplicateFilesCount;
+
     // Diálogo de archivo duplicado
     [ObservableProperty]
     private bool _showDuplicateFileDialog;
@@ -412,50 +422,72 @@ public partial class DeckListViewModel : ObservableObject
         var dialog = new OpenFileDialog
         {
             Filter = "Archivos PDF (*.pdf)|*.pdf",
-            Title = "Seleccionar archivo PDF de preguntas"
+            Title = "Seleccionar archivos PDF de preguntas",
+            Multiselect = true
         };
 
         if (dialog.ShowDialog() == true)
         {
-            var fileName = Path.GetFileNameWithoutExtension(dialog.FileName);
-            
-            // Verificar si ya existe un archivo con el mismo nombre en el mazo
-            var existingFile = SelectedDeckFiles.FirstOrDefault(f => 
-                string.Equals(f.Name, fileName, StringComparison.OrdinalIgnoreCase));
-            
-            if (existingFile != null)
-            {
-                DuplicateFileName = fileName;
-                ShowDuplicateFileDialog = true;
-                return;
-            }
-
-            await AnalyzeAndShowConfirmDialog(dialog.FileName, fileName);
+            await AnalyzeMultiplePdfsAndShowConfirmDialog(dialog.FileNames);
         }
     }
 
-    private async Task AnalyzeAndShowConfirmDialog(string filePath, string fileName)
+    private async Task AnalyzeMultiplePdfsAndShowConfirmDialog(string[] filePaths)
     {
         try
         {
             IsLoading = true;
-            LoadingMessage = "Analizando PDF...";
-            StatusMessage = "⏳ Analizando PDF...";
-            
-            var detectedCount = await _pdfImportService.CountQuestionsInPdfAsync(filePath);
+            PendingPdfImports.Clear();
+            TotalDetectedQuestions = 0;
+            DuplicateFilesCount = 0;
+
+            for (int i = 0; i < filePaths.Length; i++)
+            {
+                var filePath = filePaths[i];
+                var fileName = Path.GetFileNameWithoutExtension(filePath);
+                LoadingMessage = $"Analizando PDF {i + 1} de {filePaths.Length}: {fileName}...";
+
+                var isDuplicate = SelectedDeckFiles.Any(f =>
+                    string.Equals(f.Name, fileName, StringComparison.OrdinalIgnoreCase));
+
+                var detectedCount = 0;
+                if (!isDuplicate)
+                {
+                    detectedCount = await _pdfImportService.CountQuestionsInPdfAsync(filePath);
+                    TotalDetectedQuestions += detectedCount;
+                }
+                else
+                {
+                    DuplicateFilesCount++;
+                }
+
+                PendingPdfImports.Add(new PdfImportInfo
+                {
+                    FilePath = filePath,
+                    FileName = fileName,
+                    DetectedQuestions = detectedCount,
+                    IsDuplicate = isDuplicate
+                });
+            }
 
             IsLoading = false;
 
-            // Mostrar diálogo de confirmación con las preguntas detectadas
-            PendingPdfPath = filePath;
-            PendingPdfFileName = fileName;
-            PdfDetectedQuestions = detectedCount;
-            ShowPdfConfirmDialog = true;
+            // Solo mostrar diálogo si hay archivos válidos para importar
+            if (PendingPdfImports.Any(p => !p.IsDuplicate))
+            {
+                ShowPdfConfirmDialog = true;
+            }
+            else
+            {
+                StatusMessage = "⚠️ Todos los archivos seleccionados ya existen en el mazo";
+                PendingPdfImports.Clear();
+            }
         }
         catch (Exception ex)
         {
             IsLoading = false;
-            StatusMessage = $"❌ Error al importar: {ex.Message}";
+            StatusMessage = $"❌ Error al analizar: {ex.Message}";
+            PendingPdfImports.Clear();
         }
     }
 
@@ -470,41 +502,39 @@ public partial class DeckListViewModel : ObservableObject
     private async Task ConfirmPdfImport()
     {
         ShowPdfConfirmDialog = false;
-        await ImportPdfWithCount(PendingPdfPath, PdfDetectedQuestions);
-    }
 
-    [RelayCommand]
-    private void CancelPdfImport()
-    {
-        ShowPdfConfirmDialog = false;
-        PendingPdfPath = string.Empty;
-        PendingPdfFileName = string.Empty;
-        StatusMessage = "❌ Importación cancelada";
-    }
+        var validImports = PendingPdfImports.Where(p => !p.IsDuplicate).ToList();
+        var importedCount = 0;
+        var totalQuestions = 0;
 
-    private async Task ImportPdfWithCount(string pdfPath, int questionCount)
-    {
         try
         {
             IsLoading = true;
-            LoadingMessage = $"Importando {questionCount} preguntas...";
-            
-            var fileName = Path.GetFileNameWithoutExtension(pdfPath);
-            StatusMessage = $"⏳ Procesando PDF ({questionCount} preguntas)...";
-            
-            var questions = await _pdfImportService.ExtractQuestionsFromPdfAsync(pdfPath, questionCount);
-            
-            LoadingMessage = "Guardando en la base de datos...";
-            var count = await _questionService.ImportQuestionsAsync(SelectedDeck!.Id, fileName, questions);
-            
+
+            for (int i = 0; i < validImports.Count; i++)
+            {
+                var pdfInfo = validImports[i];
+                LoadingMessage = $"Importando {i + 1} de {validImports.Count}: {pdfInfo.FileName}...";
+
+                var questions = await _pdfImportService.ExtractQuestionsFromPdfAsync(
+                    pdfInfo.FilePath, pdfInfo.DetectedQuestions);
+
+                var count = await _questionService.ImportQuestionsAsync(
+                    SelectedDeck!.Id, pdfInfo.FileName, questions);
+
+                totalQuestions += count;
+                importedCount++;
+            }
+
+            // Recargar UI
             LoadingMessage = "Actualizando interfaz...";
-            var deckId = SelectedDeck.Id;
+            var deckId = SelectedDeck!.Id;
             SelectedDeck = null;
             await LoadDecks();
             SelectedDeck = Decks.FirstOrDefault(d => d.Id == deckId);
-            
+
             IsLoading = false;
-            StatusMessage = $"✅ Archivo '{fileName}' importado correctamente ({count} preguntas)";
+            StatusMessage = $"✅ {importedCount} archivo(s) importado(s) ({totalQuestions} preguntas en total)";
         }
         catch (Exception ex)
         {
@@ -513,9 +543,22 @@ public partial class DeckListViewModel : ObservableObject
         }
         finally
         {
-            PendingPdfPath = string.Empty;
-            PendingPdfFileName = string.Empty;
+            PendingPdfImports.Clear();
+            TotalDetectedQuestions = 0;
+            DuplicateFilesCount = 0;
         }
+    }
+
+    [RelayCommand]
+    private void CancelPdfImport()
+    {
+        ShowPdfConfirmDialog = false;
+        PendingPdfImports.Clear();
+        TotalDetectedQuestions = 0;
+        DuplicateFilesCount = 0;
+        PendingPdfPath = string.Empty;
+        PendingPdfFileName = string.Empty;
+        StatusMessage = "❌ Importación cancelada";
     }
 
     [RelayCommand]
