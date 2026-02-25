@@ -28,24 +28,34 @@
 
                     <!-- Create new deck -->
                     <Border Grid.Row="1" Padding="12,10" Background="#F5F5F5">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Text="{Binding NewDeckName, UpdateSourceTrigger=PropertyChanged}" 
-                                     Padding="8,6" VerticalContentAlignment="Center"
-                                     FontSize="12">
-                                <TextBox.InputBindings>
-                                    <KeyBinding Key="Enter" Command="{Binding CreateDeckCommand}"/>
-                                </TextBox.InputBindings>
-                            </TextBox>
-                            <Button Grid.Column="1" Content="➕" Margin="8,0,0,0" Padding="10,6"
-                                    ToolTip="Crear nuevo mazo"
-                                    Command="{Binding CreateDeckCommand}"
-                                    Background="#4CAF50" Foreground="White" FontWeight="Bold"
-                                    BorderThickness="0"/>
-                        </Grid>
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Text="{Binding NewDeckName, UpdateSourceTrigger=PropertyChanged}" 
+                                         Padding="8,6" VerticalContentAlignment="Center"
+                                         FontSize="12">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding CreateDeckCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                                <Button Grid.Column="1" Content="➕" Margin="8,0,0,0" Padding="10,6"
+                                        ToolTip="Crear nuevo mazo"
+                                        Command="{Binding CreateDeckCommand}"
+                                        Background="#4CAF50" Foreground="White" FontWeight="Bold"
+                                        BorderThickness="0"/>
+                            </Grid>
+                            <!-- Mensaje de error debajo del textbox -->
+                            <TextBlock Text="{Binding StatusMessage}" 
+                                       Foreground="#F44336" 
+                                       FontWeight="SemiBold"
+                                       FontSize="13"
+                                       Margin="2,4,2,0"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding StatusMessage, Converter={StaticResource NullToVisibilityConverter}}"/>
+                        </StackPanel>
                     </Border>
 
                     <!-- Deck list con archivos visibles -->
@@ -580,10 +590,15 @@
 
         <!-- Diálogo de confirmación de importación PDF -->
         <Border Background="#80000000"
-                Visibility="{Binding ShowPdfConfirmDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+                Visibility="{Binding ShowPdfConfirmDialog, Converter={StaticResource BoolToVisibilityConverter}}"
+                Focusable="True"
+                FocusManager.FocusedElement="{Binding RelativeSource={RelativeSource Self}}">
+            <Border.InputBindings>
+                <KeyBinding Key="Enter" Command="{Binding ConfirmPdfImportCommand}"/>
+                <KeyBinding Key="Escape" Command="{Binding CancelPdfImportCommand}"/>
+            </Border.InputBindings>
             <Border Background="White" CornerRadius="12" Padding="25"
-                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="450"
-                    KeyboardNavigation.TabNavigation="Cycle">
+                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="450">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
                 </Border.Effect>
@@ -605,12 +620,13 @@
                         </TextBlock>
                     </Border>
                     
+                    <TextBlock Text="Pulsa Enter para importar o Escape para cancelar" 
+                               FontSize="11" Foreground="#9E9E9E" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                    
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
-                                IsCancel="True"
                                 Command="{Binding CancelPdfImportCommand}"/>
                         <Button Content="✅ Importar" Padding="15,8" 
-                                IsDefault="True"
                                 Background="#4CAF50" Foreground="White" BorderThickness="0"
                                 Command="{Binding ConfirmPdfImportCommand}"/>
                     </StackPanel>

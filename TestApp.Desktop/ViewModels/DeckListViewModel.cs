@@ -149,6 +149,8 @@ public partial class DeckListViewModel : ObservableObject
     [ObservableProperty]
     private ProgressHistory? _currentDeckProgressHistory;
 
+    private CancellationTokenSource? _statusMessageCts;
+
     public DeckListViewModel(
         IDeckService deckService,
         IQuestionService questionService,
@@ -192,9 +194,25 @@ public partial class DeckListViewModel : ObservableObject
     [RelayCommand]
     private async Task CreateDeck()
     {
-        if (string.IsNullOrWhiteSpace(NewDeckName)) return;
+        var trimmedName = NewDeckName.Trim();
 
-        await _deckService.CreateDeckAsync(NewDeckName);
+        if (string.IsNullOrWhiteSpace(trimmedName))
+        {
+            StatusMessage = "⚠️ El nombre del mazo no puede estar vacío.";
+            return;
+        }
+
+        // Verificar si ya existe un mazo con el mismo nombre
+        var existingDeck = Decks.FirstOrDefault(d =>
+            string.Equals(d.Name, trimmedName, StringComparison.OrdinalIgnoreCase));
+
+        if (existingDeck != null)
+        {
+            StatusMessage = $"⚠️ Ya existe un mazo con el nombre '{trimmedName}'.";
+            return;
+        }
+
+        await _deckService.CreateDeckAsync(trimmedName);
         NewDeckName = string.Empty;
         await LoadDecks();
         StatusMessage = "✅ Mazo creado correctamente";
@@ -606,6 +624,28 @@ public partial class DeckListViewModel : ObservableObject
         ShowDeckStatisticsDialog = false;
         CurrentDeckStatistics = null;
         CurrentDeckProgressHistory = null;
+    }
+
+    partial void OnStatusMessageChanged(string value)
+    {
+        // Si el mensaje está vacío, no hacemos nada
+        if (string.IsNullOrWhiteSpace(value)) return;
+
+        // Cancelar cualquier temporizador anterior
+        _statusMessageCts?.Cancel();
+        _statusMessageCts = new CancellationTokenSource();
+        var token = _statusMessageCts.Token;
+
+        // Limpiar el mensaje después de 5 segundos
+        Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(5000, token);
+                StatusMessage = string.Empty;
+            }
+            catch (TaskCanceledException) { }
+        }, token);
     }
 }
 
