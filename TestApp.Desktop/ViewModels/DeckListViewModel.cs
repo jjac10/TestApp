@@ -14,6 +14,7 @@ public partial class DeckListViewModel : ObservableObject
     private readonly IQuestionService _questionService;
     private readonly IPdfImportService _pdfImportService;
     private readonly IStatisticsService _statisticsService;
+    private readonly string _userId;
     private Action<ExamViewModel>? _navigateToExamAction;
     private Func<ExamViewModel>? _createExamViewModelFunc;
 
@@ -165,12 +166,14 @@ public partial class DeckListViewModel : ObservableObject
         IDeckService deckService,
         IQuestionService questionService,
         IPdfImportService pdfImportService,
-        IStatisticsService statisticsService)
+        IStatisticsService statisticsService,
+        string userId)
     {
         _deckService = deckService;
         _questionService = questionService;
         _pdfImportService = pdfImportService;
         _statisticsService = statisticsService;
+        _userId = userId;
         LoadDecksCommand.Execute(null);
     }
 
@@ -197,7 +200,7 @@ public partial class DeckListViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadDecks()
     {
-        var decks = await _deckService.GetAllDecksAsync();
+        var decks = await _deckService.GetAllDecksAsync(_userId);
         Decks = new ObservableCollection<Deck>(decks);
     }
 
@@ -222,7 +225,7 @@ public partial class DeckListViewModel : ObservableObject
             return;
         }
 
-        await _deckService.CreateDeckAsync(trimmedName);
+        await _deckService.CreateDeckAsync(trimmedName, _userId);
         NewDeckName = string.Empty;
         await LoadDecks();
         StatusMessage = "✅ Convocatoria creada correctamente";
@@ -242,7 +245,7 @@ public partial class DeckListViewModel : ObservableObject
         else
         {
             // Eliminar directamente y recargar la lista
-            await _deckService.DeleteDeckAsync(deck.Id);
+            await _deckService.DeleteDeckAsync(deck.Id, _userId);
 
             // Si el mazo eliminado estaba seleccionado, limpiamos la selección
             if (SelectedDeck != null && SelectedDeck.Id == deck.Id)
@@ -268,7 +271,7 @@ public partial class DeckListViewModel : ObservableObject
         }
 
         ShowDeleteDeckDialog = false;
-        await _deckService.DeleteDeckAsync(DeckToDelete.Id);
+        await _deckService.DeleteDeckAsync(DeckToDelete.Id, _userId);
 
         // Si el mazo eliminado estaba seleccionado, limpiamos la selección
         if (SelectedDeck != null && SelectedDeck.Id == DeckToDelete.Id)

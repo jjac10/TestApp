@@ -1,7 +1,9 @@
 ﻿using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using TestApp.Core.Data;
+using TestApp.Core.Models;
 using TestApp.Core.Services;
+using TestApp.Desktop.Services;
 using TestApp.Desktop.ViewModels;
 
 namespace TestApp.Desktop;
@@ -29,6 +31,26 @@ public partial class App : Application
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         context.Database.EnsureCreated();
+        EnsureLocalUserExists(context);
+    }
+
+    private static void EnsureLocalUserExists(AppDbContext context)
+    {
+        var localUser = context.Users.Find(DesktopUserConstants.UserId);
+        if (localUser != null) return;
+
+        context.Users.Add(new User
+        {
+            Id = DesktopUserConstants.UserId,
+            UserName = "local",
+            NormalizedUserName = "LOCAL",
+            Email = "local@testapp.desktop",
+            NormalizedEmail = "LOCAL@TESTAPP.DESKTOP",
+            EmailConfirmed = true,
+            FullName = DesktopUserConstants.FullName,
+            SecurityStamp = Guid.NewGuid().ToString()
+        });
+        context.SaveChanges();
     }
 
     private static void ConfigureServices(IServiceCollection services)
@@ -44,7 +66,13 @@ public partial class App : Application
 
         // ViewModels
         services.AddSingleton<MainViewModel>();
-        services.AddTransient<DeckListViewModel>();
+        services.AddTransient<DeckListViewModel>(sp =>
+            new DeckListViewModel(
+                sp.GetRequiredService<IDeckService>(),
+                sp.GetRequiredService<IQuestionService>(),
+                sp.GetRequiredService<IPdfImportService>(),
+                sp.GetRequiredService<IStatisticsService>(),
+                DesktopUserConstants.UserId));
         services.AddTransient<Func<Action, ExamViewModel>>(sp => goHomeAction =>
             new ExamViewModel(sp.GetRequiredService<IQuestionService>(), goHomeAction));
 

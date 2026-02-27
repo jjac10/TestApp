@@ -23,6 +23,14 @@ public partial class ExamViewModel : ObservableObject
     // Clave: letra original -> Valor: letra mostrada (A,B,C,D)
     private Dictionary<char, char> _originalToDisplayMapping = [];
 
+    // Zoom: de 80% a 200% en saltos de 10%
+    private const double ZoomMin = 0.8;
+    private const double ZoomMax = 2.0;
+    private const double ZoomStep = 0.1;
+
+    // Mantiene el zoom elegido mientras la app esté abierta
+    private static double _savedZoomScale = 1.0;
+
     [ObservableProperty]
     private Question? _currentQuestion;
 
@@ -76,6 +84,13 @@ public partial class ExamViewModel : ObservableObject
     [ObservableProperty]
     private bool _isOptionDSelected;
 
+    // Zoom
+    [ObservableProperty]
+    private double _zoomScale = _savedZoomScale;
+
+    [ObservableProperty]
+    private string _zoomText = $"{(int)(_savedZoomScale * 100)}%";
+
     public string ResultText => $"{CorrectCount} de {QuestionsCount} correctas";
     public string PercentageText => QuestionsCount > 0 
         ? $"{(CorrectCount * 100 / QuestionsCount)}% de aciertos" 
@@ -94,6 +109,34 @@ public partial class ExamViewModel : ObservableObject
     partial void OnIsOptionBSelectedChanged(bool value) { if (value) SelectedAnswer = 'B'; }
     partial void OnIsOptionCSelectedChanged(bool value) { if (value) SelectedAnswer = 'C'; }
     partial void OnIsOptionDSelectedChanged(bool value) { if (value) SelectedAnswer = 'D'; }
+
+    [RelayCommand]
+    private void ZoomIn()
+    {
+        var newScale = Math.Round(ZoomScale + ZoomStep, 2);
+        if (newScale <= ZoomMax)
+        {
+            ZoomScale = newScale;
+            ApplyZoom();
+        }
+    }
+
+    [RelayCommand]
+    private void ZoomOut()
+    {
+        var newScale = Math.Round(ZoomScale - ZoomStep, 2);
+        if (newScale >= ZoomMin)
+        {
+            ZoomScale = newScale;
+            ApplyZoom();
+        }
+    }
+
+    private void ApplyZoom()
+    {
+        _savedZoomScale = ZoomScale;
+        ZoomText = $"{(int)(ZoomScale * 100)}%";
+    }
 
     public async Task StartExamAsync(int deckId, int questionCount, QuestionFilter filter, 
         bool randomQuestions = true, bool randomAnswers = false, bool reviewMode = true)
