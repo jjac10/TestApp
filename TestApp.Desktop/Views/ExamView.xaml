@@ -132,6 +132,10 @@
 
                         <!-- Buttons -->
                         <StackPanel Orientation="Horizontal" Margin="0,20,0,20">
+                            <!-- Botón Anterior (solo visible cuando no es la primera pregunta) -->
+                            <Button Content="⬅️ Anterior" Padding="20,10" FontSize="14" Margin="0,0,10,0"
+                                    Command="{Binding PreviousQuestionCommand}"
+                                    Visibility="{Binding CanGoBack, Converter={StaticResource BoolToVisibilityConverter}}"/>
                             <Button Content="Confirmar" Padding="20,10" FontSize="14"
                                     Command="{Binding ConfirmAnswerCommand}"
                                     Visibility="{Binding ShowResult, Converter={StaticResource BoolToVisibilityInverseConverter}}"
@@ -160,7 +164,7 @@
                                 <Button Content="📋 Repasar todas las preguntas" Padding="20,12" FontSize="14" 
                                         Margin="0,0,0,10" MinWidth="280"
                                         Command="{Binding ReviewAllQuestionsCommand}"/>
-                        
+
                                 <Button Padding="20,12" FontSize="14" Margin="0,0,0,10" MinWidth="280"
                                         Background="#FF9800" Foreground="White"
                                         Command="{Binding RetryFailedQuestionsCommand}"
@@ -173,7 +177,7 @@
                                         </TextBlock>
                                     </Button.Content>
                                 </Button>
-                                
+
                                 <Button Content="🏠 Volver al Inicio" Padding="20,12" FontSize="14"
                                         Command="{Binding GoHomeCommand}" MinWidth="280"/>
                             </StackPanel>

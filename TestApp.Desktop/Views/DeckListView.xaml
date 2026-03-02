@@ -466,7 +466,13 @@
                                                             <Button Content="💾 Guardar" Padding="10,5"
                                                                     Command="{Binding DataContext.SaveCorrectAnswerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                     CommandParameter="{Binding}"
-                                                                    Background="#4CAF50" Foreground="White" BorderThickness="0"/>
+                                                                    Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                                                    Margin="0,0,8,0"/>
+                                                            <Button Content="🗑️ Eliminar" Padding="10,5"
+                                                                    Command="{Binding DataContext.DeleteQuestionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="#F44336" Foreground="White" BorderThickness="0"
+                                                                    ToolTip="Eliminar esta pregunta permanentemente"/>
                                                         </StackPanel>
                                                     </StackPanel>
                                                 </Border>
@@ -1399,6 +1405,50 @@
                             Command="{Binding CloseDeckStatisticsCommand}"/>
                 </StackPanel>
                 </ScrollViewer>
+            </Border>
+        </Border>
+
+        <!-- Diálogo de confirmación de borrado de pregunta -->
+        <Border Background="#80000000"
+                Visibility="{Binding ShowDeleteQuestionDialog, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="White" CornerRadius="12" Padding="25"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="500"
+                    Margin="20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" Opacity="0.3"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="⚠️ Eliminar Pregunta" 
+                               FontSize="16" FontWeight="Bold" Foreground="#F44336" Margin="0,0,0,15"/>
+                    
+                    <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                        <Run Text="¿Estás seguro de que deseas eliminar la "/>
+                        <Run Text="{Binding QuestionToDelete.Question.Number, StringFormat='pregunta {0}', Mode=OneWay}" 
+                             FontWeight="Bold" Foreground="#F44336"/>
+                        <Run Text="?"/>
+                    </TextBlock>
+                    
+                    <!-- Enunciado de la pregunta -->
+                    <Border Background="#F5F5F5" CornerRadius="6" Padding="12" Margin="0,0,0,15">
+                        <TextBlock Text="{Binding QuestionToDelete.Question.Statement}" 
+                                   TextWrapping="Wrap" Foreground="#424242" FontSize="12"
+                                   MaxHeight="80" TextTrimming="CharacterEllipsis"/>
+                    </Border>
+                    
+                    <Border Background="#FFEBEE" CornerRadius="6" Padding="12" Margin="0,0,0,20">
+                        <TextBlock Text="⚠️ Esta acción no se puede deshacer. Se eliminarán también todas las respuestas registradas de esta pregunta." 
+                                   TextWrapping="Wrap" Foreground="#C62828" FontSize="12"/>
+                    </Border>
+                    
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancelar" Padding="15,8" Margin="0,0,10,0"
+                                IsCancel="True"
+                                Command="{Binding CancelDeleteQuestionCommand}"/>
+                        <Button Content="🗑️ Eliminar Pregunta" Padding="15,8" 
+                                Background="#F44336" Foreground="White" BorderThickness="0"
+                                Command="{Binding ConfirmDeleteQuestionCommand}"/>
+                    </StackPanel>
+                </StackPanel>
             </Border>
         </Border>
     </Grid>

@@ -121,6 +121,17 @@ public class QuestionService : IQuestionService
             "DELETE FROM QuestionFiles WHERE Id = {0}", fileId);
     }
 
+    public async Task DeleteQuestionAsync(int questionId)
+    {
+        // Primero eliminar respuestas asociadas
+        await _context.Database.ExecuteSqlRawAsync(
+            "DELETE FROM Answers WHERE QuestionId = {0}", questionId);
+        
+        // Luego eliminar la pregunta
+        await _context.Database.ExecuteSqlRawAsync(
+            "DELETE FROM Questions WHERE Id = {0}", questionId);
+    }
+
     private static IQueryable<Question> ApplyFilter(IQueryable<Question> query, QuestionFilter filter)
     {
         return filter switch
