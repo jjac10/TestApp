@@ -21,6 +21,11 @@ public interface IQuestionService
     Task UpdateCorrectAnswerAsync(int questionId, char newCorrectAnswer);
     
     /// <summary>
+    /// Elimina una pregunta y sus respuestas asociadas
+    /// </summary>
+    Task DeleteQuestionAsync(int questionId);
+    
+    /// <summary>
     /// Cuenta las preguntas de un archivo según el filtro
     /// </summary>
     Task<int> CountQuestionsInFileAsync(int fileId, QuestionFilter filter);

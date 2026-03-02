@@ -159,6 +159,13 @@ public partial class DeckListViewModel : ObservableObject
     [ObservableProperty]
     private ProgressHistory? _currentDeckProgressHistory;
 
+    // Diálogo de confirmación de borrado de pregunta
+    [ObservableProperty]
+    private bool _showDeleteQuestionDialog;
+
+    [ObservableProperty]
+    private EditableQuestion? _questionToDelete;
+
     private CancellationTokenSource? _statusMessageCts;
 
     public DeckListViewModel(
@@ -180,8 +187,13 @@ public partial class DeckListViewModel : ObservableObject
         _navigateToExamAction = navigateToExamAction;
     }
 
+    private bool _suppressDeckChangeHandling = false;
+
     partial void OnSelectedDeckChanged(Deck? value)
     {
+        // Si la bandera está activa, no hacer nada
+        if (_suppressDeckChangeHandling) return;
+        
         if (value != null)
         {
             SelectedDeckFiles = new ObservableCollection<QuestionFile>(value.Files);
@@ -400,6 +412,64 @@ public partial class DeckListViewModel : ObservableObject
         editableQuestion.NotifyQuestionChanged();
 
         StatusMessage = $"✅ Pregunta {editableQuestion.Question.Number} actualizada";
+    }
+
+    [RelayCommand]
+    private void DeleteQuestion(EditableQuestion editableQuestion)
+    {
+        if (editableQuestion == null) return;
+
+        QuestionToDelete = editableQuestion;
+        ShowDeleteQuestionDialog = true;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmDeleteQuestion()
+    {
+        if (QuestionToDelete == null) return;
+
+        var questionNumber = QuestionToDelete.Question.Number;
+
+        await _questionService.DeleteQuestionAsync(QuestionToDelete.Question.Id);
+
+        // Quitar de la lista visual
+        QuestionsToShow.Remove(QuestionToDelete);
+
+        ShowDeleteQuestionDialog = false;
+        QuestionToDelete = null;
+
+        // Actualizar los conteos del mazo sin salir de la vista de edición
+        if (SelectedDeck != null)
+        {
+            var deckId = SelectedDeck.Id;
+            
+            // Activar la bandera para evitar que OnSelectedDeckChanged cierre la vista
+            _suppressDeckChangeHandling = true;
+            
+            await LoadDecks();
+            
+            // Actualizar la selección
+            var updatedDeck = Decks.FirstOrDefault(d => d.Id == deckId);
+            if (updatedDeck != null)
+            {
+                SelectedDeck = updatedDeck;
+                
+                // Actualizar manualmente SelectedDeckFiles para refrescar los contadores
+                SelectedDeckFiles = new ObservableCollection<QuestionFile>(updatedDeck.Files);
+            }
+            
+            // Desactivar la bandera
+            _suppressDeckChangeHandling = false;
+        }
+
+        StatusMessage = $"🗑️ Pregunta {questionNumber} eliminada";
+    }
+
+    [RelayCommand]
+    private void CancelDeleteQuestion()
+    {
+        ShowDeleteQuestionDialog = false;
+        QuestionToDelete = null;
     }
 
     [RelayCommand]
