@@ -97,6 +97,16 @@ public class QuestionsController : ControllerBase
     }
 
     /// <summary>
+    /// Elimina una pregunta de un archivo
+    /// </summary>
+    [HttpDelete("question/{questionId}")]
+    public async Task<IActionResult> DeleteQuestion(int questionId)
+    {
+        await _questionService.DeleteQuestionAsync(questionId);
+        return NoContent();
+    }
+
+    /// <summary>
     /// Importa preguntas desde un JSON a un mazo
     /// </summary>
     [HttpPost("deck/{deckId}/import")]
