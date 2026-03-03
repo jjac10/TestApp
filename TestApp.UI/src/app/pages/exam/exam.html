@@ -1,0 +1,154 @@
+@if (loading()) {
+  <div class="loading-center">
+    <div class="loading-spinner"></div>
+    <p>Preparando examen...</p>
+  </div>
+} @else if (finished()) {
+  <!-- Results -->
+  <div class="results-container">
+    <div class="results-card card">
+      <h1>📊 Resultados del Examen</h1>
+
+      <div class="results-score" [class.passed]="score() >= 50" [class.failed]="score() < 50">
+        <div class="score-circle">
+          <span class="score-value">{{ score() | number:'1.1-1' }}%</span>
+        </div>
+      </div>
+
+      <div class="results-stats">
+        <div class="stat-card">
+          <div class="stat-value">{{ answers().length }}</div>
+          <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card" style="--stat-color: var(--success);">
+          <div class="stat-value" style="color: var(--success);">{{ correctCount() }}</div>
+          <div class="stat-label">Correctas</div>
+        </div>
+        <div class="stat-card" style="--stat-color: var(--danger);">
+          <div class="stat-value" style="color: var(--danger);">{{ incorrectCount() }}</div>
+          <div class="stat-label">Incorrectas</div>
+        </div>
+      </div>
+
+      <div class="results-actions">
+        <button class="btn-primary btn-lg" (click)="goHome()">🏠 Volver</button>
+        @if (failedQuestions().length > 0) {
+          <button class="btn-danger btn-lg" (click)="retryFailed()">🔄 Reintentar Falladas ({{ failedQuestions().length }})</button>
+        }
+        <button class="btn-outline btn-lg" (click)="toggleReview()">
+          {{ showReview() ? '📕 Ocultar Revisión' : '📖 Revisar Respuestas' }}
+        </button>
+      </div>
+
+      @if (showReview()) {
+        <div class="review-section">
+          <h2>Revisión de Respuestas</h2>
+          @for (record of answers(); track record.question.id; let i = $index) {
+            <div class="review-question" [class.review-correct]="record.isCorrect" [class.review-incorrect]="!record.isCorrect">
+              <div class="review-header">
+                <span class="review-number">{{ i + 1 }}</span>
+                <span class="review-badge" [class.badge-success]="record.isCorrect" [class.badge-danger]="!record.isCorrect">
+                  {{ record.isCorrect ? '✅ Correcta' : '❌ Incorrecta' }}
+                </span>
+              </div>
+              <p class="review-statement">{{ record.question.statement }}</p>
+              <div class="review-options">
+                <div class="review-option"
+                     [class.correct]="'A' === record.question.correctAnswer.toUpperCase()"
+                     [class.wrong]="'A' === record.userAnswer.toUpperCase() && 'A' !== record.question.correctAnswer.toUpperCase()">
+                  <strong>A)</strong> {{ record.question.optionA }}
+                </div>
+                <div class="review-option"
+                     [class.correct]="'B' === record.question.correctAnswer.toUpperCase()"
+                     [class.wrong]="'B' === record.userAnswer.toUpperCase() && 'B' !== record.question.correctAnswer.toUpperCase()">
+                  <strong>B)</strong> {{ record.question.optionB }}
+                </div>
+                <div class="review-option"
+                     [class.correct]="'C' === record.question.correctAnswer.toUpperCase()"
+                     [class.wrong]="'C' === record.userAnswer.toUpperCase() && 'C' !== record.question.correctAnswer.toUpperCase()">
+                  <strong>C)</strong> {{ record.question.optionC }}
+                </div>
+                <div class="review-option"
+                     [class.correct]="'D' === record.question.correctAnswer.toUpperCase()"
+                     [class.wrong]="'D' === record.userAnswer.toUpperCase() && 'D' !== record.question.correctAnswer.toUpperCase()">
+                  <strong>D)</strong> {{ record.question.optionD }}
+                </div>
+              </div>
+              @if (record.question.source) {
+                <div class="review-source">📖 {{ record.question.source }}</div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+} @else if (currentQuestion(); as q) {
+  <!-- Exam In Progress -->
+  <div class="exam-container">
+    <div class="exam-topbar">
+      <button class="btn-outline btn-sm" (click)="goHome()">✕ Salir</button>
+      <div class="exam-progress-info">
+        Pregunta {{ currentIndex() + 1 }} de {{ questions().length }}
+      </div>
+      @if (reviewMode) {
+        <div class="exam-score-live">
+          <span class="correct-live">✅ {{ correctCount() }}</span>
+          <span class="incorrect-live">❌ {{ incorrectCount() }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width.%]="progress()"></div>
+    </div>
+
+    <div class="exam-content">
+      <div class="question-card card">
+        <div class="question-header-exam">
+          <span class="question-number-exam">{{ currentIndex() + 1 }}</span>
+          <p class="question-statement-exam">{{ q.original.statement }}</p>
+        </div>
+
+        <div class="options-list">
+          @for (opt of q.displayOptions; track opt.letter) {
+            <button
+              class="option-button"
+              [class]="getOptionClass(q, opt)"
+              (click)="selectAnswer(opt.letter)"
+              [disabled]="answered()"
+            >
+              <span class="opt-letter">{{ opt.letter }}</span>
+              <span class="opt-text">{{ opt.text }}</span>
+            </button>
+          }
+        </div>
+
+        @if (showingResult()) {
+          <div class="result-feedback" [class.feedback-correct]="answers()[answers().length - 1]?.isCorrect" [class.feedback-incorrect]="!answers()[answers().length - 1]?.isCorrect">
+            @if (answers()[answers().length - 1]?.isCorrect) {
+              <p>✅ ¡Correcto!</p>
+            } @else {
+              <p>❌ Incorrecto. La respuesta correcta es <strong>{{ getCorrectDisplayLetter(q) }}</strong></p>
+            }
+            @if (q.original.source) {
+              <p class="result-source">📖 {{ q.original.source }}</p>
+            }
+          </div>
+        }
+
+        <div class="exam-actions">
+          @if (!answered()) {
+            <button class="btn-primary btn-lg" (click)="confirmAnswer()" [disabled]="!selectedAnswer()">
+              Confirmar
+            </button>
+          } @else {
+            <button class="btn-primary btn-lg" (click)="nextQuestion()">
+              {{ currentIndex() < questions().length - 1 ? 'Siguiente →' : 'Finalizar' }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

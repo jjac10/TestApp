@@ -13,53 +13,39 @@ public class DeckService : IDeckService
         _context = context;
     }
 
-    public async Task<List<Deck>> GetAllDecksAsync()
-        => await _context.Decks
-            .AsNoTracking()
+    public async Task<List<Deck>> GetAllDecksAsync(string userId)
+    {
+        return await _context.Decks
+            .Where(d => d.UserId == userId)
             .Include(d => d.Files)
                 .ThenInclude(f => f.Questions)
             .ToListAsync();
+    }
 
-    public async Task<Deck> CreateDeckAsync(string name)
+    public async Task<Deck> CreateDeckAsync(string name, string userId)
     {
-        var deck = new Deck { Name = name };
+        var deck = new Deck { Name = name, UserId = userId };
         _context.Decks.Add(deck);
         await _context.SaveChangesAsync();
         return deck;
     }
 
-    public async Task DeleteDeckAsync(int deckId)
+    public async Task DeleteDeckAsync(int deckId, string userId)
     {
-        // Usar SQL directo para eliminar en cascada de forma segura
-        // Primero eliminar respuestas
-        await _context.Database.ExecuteSqlRawAsync(@"
-            DELETE FROM Answers 
-            WHERE QuestionId IN (
-                SELECT q.Id FROM Questions q
-                INNER JOIN QuestionFiles f ON q.FileId = f.Id
-                WHERE f.DeckId = {0}
-            )", deckId);
-        
-        // Luego eliminar preguntas
-        await _context.Database.ExecuteSqlRawAsync(@"
-            DELETE FROM Questions 
-            WHERE FileId IN (
-                SELECT Id FROM QuestionFiles WHERE DeckId = {0}
-            )", deckId);
-        
-        // Luego eliminar archivos
-        await _context.Database.ExecuteSqlRawAsync(
-            "DELETE FROM QuestionFiles WHERE DeckId = {0}", deckId);
-        
-        // Finalmente eliminar el mazo
-        await _context.Database.ExecuteSqlRawAsync(
-            "DELETE FROM Decks WHERE Id = {0}", deckId);
+        var deck = await _context.Decks
+            .FirstOrDefaultAsync(d => d.Id == deckId && d.UserId == userId)
+            ?? throw new InvalidOperationException("Mazo no encontrado");
+
+        _context.Decks.Remove(deck);
+        await _context.SaveChangesAsync();
     }
 
-    public async Task<Deck?> GetDeckWithFilesAsync(int deckId)
-        => await _context.Decks
-            .AsNoTracking()
+    public async Task<Deck?> GetDeckWithFilesAsync(int deckId, string userId)
+    {
+        return await _context.Decks
+            .Where(d => d.Id == deckId && d.UserId == userId)
             .Include(d => d.Files)
                 .ThenInclude(f => f.Questions)
-            .FirstOrDefaultAsync(d => d.Id == deckId);
+            .FirstOrDefaultAsync();
+    }
 }

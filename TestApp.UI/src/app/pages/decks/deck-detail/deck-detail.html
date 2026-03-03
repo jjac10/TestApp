@@ -1,0 +1,243 @@
+@if (statusMessage()) {
+  <div class="toast toast-success">{{ statusMessage() }}</div>
+}
+
+@if (loading()) {
+  <div class="loading-center">
+    <div class="loading-spinner"></div>
+    <p>Cargando...</p>
+  </div>
+} @else if (deck(); as d) {
+  <div class="page-header">
+    <div class="page-header-left">
+      <a routerLink="/decks" class="back-link">← Volver</a>
+      <h1>{{ d.name }}</h1>
+    </div>
+    <div class="page-header-actions">
+      <button class="btn-primary btn-icon" (click)="openImportModal()">📄 Importar PDF</button>
+      @if (getTotalQuestions() > 0) {
+        <button class="btn-success btn-icon" (click)="openDeckExam()">🎯 Examen General</button>
+        <a [routerLink]="['/decks', d.id, 'statistics']" class="btn-outline btn-icon" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;padding:8px 16px;border-radius:var(--radius);">
+          📊 Estadísticas
+        </a>
+      }
+    </div>
+  </div>
+
+  <div class="deck-summary">
+    <div class="stat-card">
+      <div class="stat-value">{{ d.files?.length || 0 }}</div>
+      <div class="stat-label">Temas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ getTotalQuestions() }}</div>
+      <div class="stat-label">Preguntas</div>
+    </div>
+  </div>
+
+  @if (!d.files || d.files.length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">📁</div>
+      <h3>No hay temas todavía</h3>
+      <p>Importa un archivo PDF para añadir preguntas</p>
+    </div>
+  } @else {
+    <div class="files-list">
+      @for (file of d.files; track file.id) {
+        <div class="file-card card">
+          <div class="file-info">
+            <h3>📄 {{ file.name }}</h3>
+            <span class="badge badge-info">{{ file.questions?.length || 0 }} preguntas</span>
+          </div>
+          <div class="file-actions">
+            <button class="btn-primary btn-sm btn-icon" (click)="openFileExam(file)" [disabled]="(file.questions?.length || 0) === 0">
+              🎯 Examen
+            </button>
+            <a [routerLink]="['/decks', d.id, 'files', file.id, 'questions']"
+               class="btn-outline btn-sm btn-icon"
+               style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+              📋 Ver preguntas
+            </a>
+            <a [routerLink]="['/decks', d.id, 'files', file.id, 'statistics']"
+               class="btn-outline btn-sm btn-icon"
+               style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;"
+               [class.disabled]="(file.questions?.length || 0) === 0">
+              📊 Estadísticas
+            </a>
+            <button class="btn-danger btn-sm" (click)="openDeleteFile(file, $event)">🗑️</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+}
+
+<!-- Import Modal -->
+@if (showImportModal()) {
+  <div class="modal-backdrop" (click)="!importing() && cancelImport()">
+    <div class="modal-content modal-lg" (click)="$event.stopPropagation()">
+      <h2>📄 Importar PDFs</h2>
+
+      @if (importStep() === 'select') {
+        <div class="import-body">
+          <p style="margin: 16px 0; color: var(--gray-600);">
+            Selecciona uno o varios archivos PDF con preguntas tipo test.
+          </p>
+          <input type="file" accept=".pdf" multiple (change)="onFilesSelected($event)" />
+
+          @if (importFiles().length > 0) {
+            <div class="import-file-list">
+              @for (f of importFiles(); track f.name) {
+                <div class="import-file-item">
+                  📄 {{ f.name }} <span class="file-size">({{ (f.size / 1024).toFixed(0) }} KB)</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="cancelImport()" [disabled]="importing()">Cancelar</button>
+          <button class="btn-primary" (click)="previewImport()" [disabled]="importFiles().length === 0 || importing()">
+            @if (importing()) {
+              <span class="loading-spinner"></span> Procesando...
+            } @else {
+              Previsualizar
+            }
+          </button>
+        </div>
+      }
+
+      @if (importStep() === 'preview' && importPreview(); as preview) {
+        <div class="import-body">
+          <div class="import-summary">
+            <div class="stat-card">
+              <div class="stat-value">{{ preview.totalFiles }}</div>
+              <div class="stat-label">Archivos</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">{{ preview.validFiles }}</div>
+              <div class="stat-label">Válidos</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">{{ preview.totalQuestions }}</div>
+              <div class="stat-label">Preguntas</div>
+            </div>
+          </div>
+
+          <div class="import-file-list">
+            @for (f of preview.files; track f.originalFileName) {
+              <div class="import-file-item" [class.invalid]="!f.isValid">
+                @if (f.isValid) { ✅ } @else { ❌ }
+                {{ f.originalFileName }}
+                @if (f.isValid) {
+                  <span class="badge badge-success">{{ f.questionCount }} preguntas</span>
+                } @else {
+                  <span class="badge badge-danger">{{ f.error }}</span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="cancelImport()" [disabled]="importing()">Cancelar</button>
+          <button class="btn-primary" (click)="confirmImport()" [disabled]="importing() || preview.validFiles === 0">
+            @if (importing()) {
+              <span class="loading-spinner"></span> Importando...
+            } @else {
+              Confirmar Importación
+            }
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- Exam Options Modal -->
+@if (showExamModal()) {
+  <div class="modal-backdrop" (click)="showExamModal.set(false)">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>🎯 Opciones del Examen</h2>
+
+      <div class="exam-options">
+        <div class="option-group">
+          <label>Filtro de preguntas</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="filter" value="All" [checked]="examFilter() === 'All'" (change)="onFilterChange('All')">
+              Todas
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="filter" value="NeverAnswered" [checked]="examFilter() === 'NeverAnswered'" (change)="onFilterChange('NeverAnswered')">
+              No contestadas
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="filter" value="Failed" [checked]="examFilter() === 'Failed'" (change)="onFilterChange('Failed')">
+              Falladas
+            </label>
+          </div>
+          <p class="option-info">Disponibles: {{ availableQuestionCount() }} preguntas</p>
+        </div>
+
+        @if (!examIsFileBased()) {
+          <div class="option-group">
+            <label>Número de preguntas</label>
+            <input type="number" min="1" [max]="availableQuestionCount()"
+                   [ngModel]="examQuestionCount()"
+                   (ngModelChange)="examQuestionCount.set($event)" />
+          </div>
+        }
+
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [checked]="examRandom()" (change)="examRandom.set(!examRandom())">
+            Preguntas aleatorias
+          </label>
+        </div>
+
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [checked]="examRandomAnswers()" (change)="examRandomAnswers.set(!examRandomAnswers())">
+            Respuestas aleatorias
+          </label>
+        </div>
+
+        <div class="option-group">
+          <label class="checkbox-label">
+            <input type="checkbox" [checked]="examReviewMode()" (change)="examReviewMode.set(!examReviewMode())">
+            Modo repaso (ver resultado tras cada pregunta)
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="showExamModal.set(false)">Cancelar</button>
+        <button class="btn-primary" (click)="startExam()" [disabled]="availableQuestionCount() === 0">
+          Comenzar Examen
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete File Modal -->
+@if (showDeleteFileModal() && fileToDelete()) {
+  <div class="modal-backdrop" (click)="cancelDeleteFile()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>🗑️ Eliminar Tema</h2>
+      <p style="margin: 16px 0;">
+        ¿Eliminar <strong>{{ fileToDelete()!.name }}</strong> con todas sus preguntas y respuestas?
+      </p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cancelDeleteFile()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmDeleteFile()" [disabled]="deletingFile()">
+          @if (deletingFile()) {
+            <span class="loading-spinner"></span>
+          } @else {
+            Eliminar
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

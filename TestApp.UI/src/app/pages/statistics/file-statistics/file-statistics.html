@@ -1,0 +1,98 @@
+<a [routerLink]="['/decks', deckId]" class="back-link">← Volver</a>
+
+@if (loading()) {
+  <div class="loading-center">
+    <div class="loading-spinner"></div>
+    <p>Cargando estadísticas...</p>
+  </div>
+} @else if (stats(); as s) {
+  <h1>📊 Estadísticas: {{ s.fileName }}</h1>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value">{{ s.totalQuestions }}</div>
+      <div class="stat-label">Preguntas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ s.totalAttempts }}</div>
+      <div class="stat-label">Intentos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--success);">{{ s.correctAttempts }}</div>
+      <div class="stat-label">Correctas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--danger);">{{ s.incorrectAttempts }}</div>
+      <div class="stat-label">Incorrectas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ s.successRate | number:'1.1-1' }}%</div>
+      <div class="stat-label">Tasa de Acierto</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--warning);">{{ s.questionsNeverAnswered }}</div>
+      <div class="stat-label">No contestadas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--success);">{{ s.questionsAlwaysCorrect }}</div>
+      <div class="stat-label">Siempre correctas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--danger);">{{ s.questionsAlwaysWrong }}</div>
+      <div class="stat-label">Siempre incorrectas</div>
+    </div>
+  </div>
+
+  <!-- Progress Chart -->
+  @if (progress(); as p) {
+    <div class="chart-section card">
+      <div class="chart-header">
+        <h2>📈 Progreso (últimos 14 días)</h2>
+        <span class="trend-badge" [class]="getTrendClass()">{{ getTrendText() }}</span>
+      </div>
+
+      <div class="chart">
+        <div class="chart-bars">
+          @for (day of p.dailyProgress; track day.date) {
+            <div class="chart-bar-container" [title]="day.dateLabel + ': ' + day.totalAttempts + ' intentos, ' + (day.successRate | number:'1.0-0') + '% acierto'">
+              <div class="chart-bar">
+                <div class="bar-correct" [style.height.px]="getBarHeight(day.correctAttempts)"></div>
+                <div class="bar-incorrect" [style.height.px]="getBarHeight(day.totalAttempts - day.correctAttempts)"></div>
+              </div>
+              <span class="chart-label">{{ day.dateLabel }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="chart-legend">
+        <span class="legend-item"><span class="legend-dot correct"></span> Correctas</span>
+        <span class="legend-item"><span class="legend-dot incorrect"></span> Incorrectas</span>
+        <span class="legend-info">{{ p.totalDaysStudied }} días estudiados</span>
+      </div>
+    </div>
+  }
+
+  <!-- Most Failed -->
+  @if (s.mostFailedQuestions.length > 0) {
+    <div class="section card">
+      <h2>❌ Preguntas más falladas</h2>
+      <div class="failed-list">
+        @for (q of s.mostFailedQuestions; track q.questionId) {
+          <div class="failed-item">
+            <div class="failed-header">
+              <span class="question-num">#{{ q.questionNumber }}</span>
+              <span class="badge badge-danger">{{ q.failureRate | number:'1.0-0' }}% fallos</span>
+            </div>
+            <p class="failed-statement">{{ q.statement }}</p>
+            <div class="failed-stats">
+              <span>{{ q.timesAnswered }} intentos</span>
+              <span style="color:var(--success);">{{ q.timesCorrect }} ✓</span>
+              <span style="color:var(--danger);">{{ q.timesFailed }} ✗</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+}

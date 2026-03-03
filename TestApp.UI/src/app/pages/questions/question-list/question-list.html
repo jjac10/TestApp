@@ -1,0 +1,108 @@
+@if (statusMessage()) {
+  <div class="toast toast-success">{{ statusMessage() }}</div>
+}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <a [routerLink]="['/decks', deckId]" class="back-link">← Volver</a>
+    <h1>📋 Preguntas</h1>
+    <span class="badge badge-info">{{ questions().length }} preguntas</span>
+  </div>
+  <div class="page-header-actions">
+    <button [class]="editMode() ? 'btn-primary btn-icon' : 'btn-outline btn-icon'" (click)="toggleEditMode()">
+      ✏️ {{ editMode() ? 'Edición activada' : 'Modo edición' }}
+    </button>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="loading-center">
+    <div class="loading-spinner"></div>
+    <p>Cargando preguntas...</p>
+  </div>
+} @else if (questions().length === 0) {
+  <div class="empty-state">
+    <div class="empty-icon">📝</div>
+    <h3>No hay preguntas</h3>
+  </div>
+} @else {
+  <div class="questions-list">
+    @for (q of questions(); track q.id; let i = $index) {
+      <div class="question-card card">
+        <div class="question-header">
+          <span class="question-number">{{ q.number }}</span>
+          <div class="question-statement">{{ q.statement }}</div>
+          @if (editMode()) {
+            <button class="btn-danger btn-sm" (click)="openDeleteQuestion(q)">🗑️</button>
+          }
+        </div>
+
+        <div class="question-options">
+          <div class="option" [class.correct]="q.correctAnswer.toUpperCase() === 'A'">
+            <span class="option-letter">A</span>
+            <span class="option-text">{{ q.optionA }}</span>
+            @if (editMode()) {
+              <input type="radio" [name]="'correct_' + q.id" value="A"
+                     [checked]="q.correctAnswer.toUpperCase() === 'A'"
+                     (change)="updateCorrectAnswer(q, 'A')">
+            }
+          </div>
+          <div class="option" [class.correct]="q.correctAnswer.toUpperCase() === 'B'">
+            <span class="option-letter">B</span>
+            <span class="option-text">{{ q.optionB }}</span>
+            @if (editMode()) {
+              <input type="radio" [name]="'correct_' + q.id" value="B"
+                     [checked]="q.correctAnswer.toUpperCase() === 'B'"
+                     (change)="updateCorrectAnswer(q, 'B')">
+            }
+          </div>
+          <div class="option" [class.correct]="q.correctAnswer.toUpperCase() === 'C'">
+            <span class="option-letter">C</span>
+            <span class="option-text">{{ q.optionC }}</span>
+            @if (editMode()) {
+              <input type="radio" [name]="'correct_' + q.id" value="C"
+                     [checked]="q.correctAnswer.toUpperCase() === 'C'"
+                     (change)="updateCorrectAnswer(q, 'C')">
+            }
+          </div>
+          <div class="option" [class.correct]="q.correctAnswer.toUpperCase() === 'D'">
+            <span class="option-letter">D</span>
+            <span class="option-text">{{ q.optionD }}</span>
+            @if (editMode()) {
+              <input type="radio" [name]="'correct_' + q.id" value="D"
+                     [checked]="q.correctAnswer.toUpperCase() === 'D'"
+                     (change)="updateCorrectAnswer(q, 'D')">
+            }
+          </div>
+        </div>
+
+        @if (q.source) {
+          <div class="question-source">📖 {{ q.source }}</div>
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- Delete Question Modal -->
+@if (showDeleteModal() && questionToDelete()) {
+  <div class="modal-backdrop" (click)="cancelDeleteQuestion()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>🗑️ Eliminar Pregunta</h2>
+      <p style="margin: 16px 0;">
+        ¿Eliminar la pregunta <strong>#{{ questionToDelete()!.number }}</strong>?
+      </p>
+      <p class="question-preview">{{ questionToDelete()!.statement }}</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cancelDeleteQuestion()">Cancelar</button>
+        <button class="btn-danger" (click)="confirmDeleteQuestion()" [disabled]="deleting()">
+          @if (deleting()) {
+            <span class="loading-spinner"></span>
+          } @else {
+            Eliminar
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

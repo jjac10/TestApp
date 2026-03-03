@@ -1,0 +1,30 @@
+<div class="layout">
+  <header class="topbar">
+    <div class="topbar-left">
+      <a routerLink="/decks" class="brand">📝 PacoTEST</a>
+    </div>
+    <nav class="topbar-nav">
+      <a routerLink="/decks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: false}">
+        📚 Convocatorias
+      </a>
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin" routerLinkActive="active">
+          ⚙️ Admin
+        </a>
+      }
+    </nav>
+    <div class="topbar-right">
+      <span class="user-info">
+        <span class="user-name">{{ auth.fullName() }}</span>
+        <span class="badge" [class.badge-primary]="auth.isAdmin()" [class.badge-info]="!auth.isAdmin()">
+          {{ auth.role() }}
+        </span>
+      </span>
+      <button class="btn-outline btn-sm" (click)="logout()">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
