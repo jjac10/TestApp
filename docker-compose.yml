@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  testapp-api:
+    build:
+      context: .
+      dockerfile: TestApp.Api/Dockerfile
+    container_name: testapp-api
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Jwt__Key=TuClaveSecretaSuperSeguraDeAlMenos32Caracteres!
+      - Jwt__Issuer=TestApp.Api
+      - Jwt__Audience=TestApp.Client
+    volumes:
+      # Persistir la base de datos SQLite
+      - testapp-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  testapp-data:
+    driver: local
