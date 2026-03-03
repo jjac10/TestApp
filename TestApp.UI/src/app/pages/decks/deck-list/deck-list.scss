@@ -107,3 +107,23 @@
   font-size: 13px;
   line-height: 1.5;
 }
+
+@media (max-width: 600px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    h1 { font-size: 20px; }
+  }
+  .create-deck {
+    flex-direction: column;
+    input { width: 100%; }
+    button { width: 100%; }
+  }
+  .deck-grid {
+    grid-template-columns: 1fr;
+  }
+  .deck-card { padding: 16px; }
+  .deck-card-header h3 { font-size: 16px; }
+  .deck-card-stats { gap: 16px; }
+  .deck-stat-value { font-size: 20px; }
+}

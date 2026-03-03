@@ -3,7 +3,10 @@
     <div class="topbar-left">
       <a routerLink="/decks" class="brand">📝 PacoTEST</a>
     </div>
-    <nav class="topbar-nav">
+    <button class="mobile-menu-btn" (click)="mobileMenuOpen = !mobileMenuOpen">
+      {{ mobileMenuOpen ? '✕' : '☰' }}
+    </button>
+    <nav class="topbar-nav" [class.open]="mobileMenuOpen" (click)="mobileMenuOpen = false">
       <a routerLink="/decks" routerLinkActive="active" [routerLinkActiveOptions]="{exact: false}">
         📚 Convocatorias
       </a>

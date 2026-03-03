@@ -189,3 +189,14 @@ h1 { font-size: 24px; font-weight: 700; margin-bottom: 24px; }
   min-width: 40px;
   text-align: right;
 }
+
+@media (max-width: 600px) {
+  h1 { font-size: 18px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-section, .section { padding: 14px; }
+  .chart-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .chart-legend { flex-wrap: wrap; gap: 10px; }
+  .file-row { flex-direction: column; gap: 8px; }
+  .file-row-info { min-width: 0; width: 100%; }
+  .file-row-bar { min-width: 0; width: 100%; }
+}

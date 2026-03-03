@@ -9,6 +9,8 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './layout.scss'
 })
 export class LayoutPage {
+  mobileMenuOpen = false;
+
   constructor(public auth: AuthService) {}
 
   logout(): void {

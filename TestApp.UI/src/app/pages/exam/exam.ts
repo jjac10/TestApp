@@ -42,6 +42,7 @@ export class ExamPage implements OnInit {
   answered = signal(false);
   showingResult = signal(false);
   showReview = signal(false);
+  showExitConfirm = signal(false);
 
   // Computed
   currentQuestion = computed(() => this.questions()[this.currentIndex()]);
@@ -208,7 +209,16 @@ export class ExamPage implements OnInit {
   }
 
   goHome(): void {
+    this.showExitConfirm.set(false);
     this.router.navigate(['/decks', this.deckId]);
+  }
+
+  tryExit(): void {
+    if (this.answers().length > 0) {
+      this.showExitConfirm.set(true);
+    } else {
+      this.goHome();
+    }
   }
 
   getCorrectDisplayLetter(q: ShuffledQuestion): string {

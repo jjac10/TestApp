@@ -313,3 +313,44 @@
   color: var(--gray-400);
   font-style: italic;
 }
+
+// === Exit confirmation modal ===
+.exit-modal-text {
+  margin: 16px 0;
+  font-size: 14px;
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+.exit-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+  .exam-content .question-card { padding: 16px; }
+  .question-header-exam {
+    gap: 10px;
+    .question-number-exam { width: 32px; height: 32px; font-size: 14px; }
+  }
+  .question-statement-exam { font-size: 14px; }
+  .option-button { padding: 10px 12px; gap: 10px; font-size: 13px; }
+  .opt-letter { width: 24px; height: 24px; font-size: 11px; }
+  .exam-topbar { font-size: 12px; gap: 4px; }
+  .exam-score-live { gap: 8px; font-size: 12px; }
+  .exam-actions button { min-width: 140px; }
+  .results-card { padding: 20px; }
+  .results-card h1 { font-size: 20px; }
+  .score-circle { width: 110px; height: 110px; }
+  .score-value { font-size: 26px; }
+  .results-stats { flex-wrap: wrap; justify-content: center; }
+  .results-actions {
+    flex-direction: column;
+    button { width: 100%; }
+  }
+  .review-question { padding: 12px; }
+  .review-statement { font-size: 12px; }
+  .review-option { font-size: 12px; padding: 4px 8px; }
+}

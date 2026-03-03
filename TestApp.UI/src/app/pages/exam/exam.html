@@ -87,7 +87,7 @@
   <!-- Exam In Progress -->
   <div class="exam-container">
     <div class="exam-topbar">
-      <button class="btn-outline btn-sm" (click)="goHome()">✕ Salir</button>
+      <button class="btn-outline btn-sm" (click)="tryExit()">✕ Salir</button>
       <div class="exam-progress-info">
         Pregunta {{ currentIndex() + 1 }} de {{ questions().length }}
       </div>
@@ -148,6 +148,23 @@
             </button>
           }
         </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Exit Confirmation Modal -->
+@if (showExitConfirm()) {
+  <div class="modal-backdrop" (click)="showExitConfirm.set(false)">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>⚠️ Salir del examen</h2>
+      <p class="exit-modal-text">
+        Llevas {{ currentIndex() + 1 }} de {{ questions().length }} preguntas.
+        Si sales ahora perderás el progreso del examen.
+      </p>
+      <div class="exit-modal-actions">
+        <button class="btn-secondary" (click)="showExitConfirm.set(false)">Continuar examen</button>
+        <button class="btn-danger" (click)="goHome()">Salir</button>
       </div>
     </div>
   </div>

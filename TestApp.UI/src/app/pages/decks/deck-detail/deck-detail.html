@@ -190,14 +190,14 @@
 
         <div class="option-group">
           <label class="checkbox-label">
-            <input type="checkbox" [checked]="examRandom()" (change)="examRandom.set(!examRandom())">
+            <input type="checkbox" [checked]="examRandom()" (change)="examRandom.set(!examRandom())" [disabled]="examForceRandom()">
             Preguntas aleatorias
           </label>
         </div>
 
         <div class="option-group">
           <label class="checkbox-label">
-            <input type="checkbox" [checked]="examRandomAnswers()" (change)="examRandomAnswers.set(!examRandomAnswers())">
+            <input type="checkbox" [checked]="examRandomAnswers()" (change)="examRandomAnswers.set(!examRandomAnswers())" [disabled]="examForceRandom()">
             Respuestas aleatorias
           </label>
         </div>

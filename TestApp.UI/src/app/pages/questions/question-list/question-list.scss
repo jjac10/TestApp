@@ -130,3 +130,17 @@
   justify-content: flex-end;
   margin-top: 20px;
 }
+
+@media (max-width: 600px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .page-header-left h1 { font-size: 20px; }
+  .question-card { padding: 14px; }
+  .question-options { margin-left: 0; }
+  .question-header { gap: 8px; }
+  .question-number { width: 28px; height: 28px; font-size: 12px; }
+  .question-statement { font-size: 13px; }
+  .option { font-size: 12px; padding: 6px 10px; }
+}

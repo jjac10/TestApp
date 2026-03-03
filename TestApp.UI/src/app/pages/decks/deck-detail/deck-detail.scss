@@ -159,3 +159,30 @@
   color: var(--gray-400);
   margin-top: 6px;
 }
+
+@media (max-width: 600px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .page-header-left h1 { font-size: 20px; }
+  .page-header-actions {
+    flex-direction: column;
+    button, a { width: 100%; text-align: center; justify-content: center; }
+  }
+  .deck-summary { flex-wrap: wrap; }
+  .file-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .file-actions {
+    flex-direction: column;
+    button, a { width: 100%; text-align: center; justify-content: center; }
+  }
+  .file-info h3 { font-size: 14px; }
+  .exam-options .radio-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .import-summary { flex-wrap: wrap; }
+}

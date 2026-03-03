@@ -73,10 +73,55 @@
   color: var(--gray-700);
 }
 
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 22px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--gray-600);
+}
+
 .content {
   flex: 1;
   padding: 24px;
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 12px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 52px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    gap: 6px;
+  }
+
+  .mobile-menu-btn { display: block; }
+
+  .topbar-nav {
+    display: none;
+    width: 100%;
+    margin-left: 0;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0;
+    order: 10;
+
+    &.open { display: flex; }
+
+    a { padding: 10px 12px; }
+  }
+
+  .topbar-right {
+    gap: 8px;
+    .user-info { display: none; }
+  }
+
+  .content { padding: 16px 12px; }
 }

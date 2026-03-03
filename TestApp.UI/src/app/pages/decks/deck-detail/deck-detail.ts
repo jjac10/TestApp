@@ -33,6 +33,7 @@ export class DeckDetailPage implements OnInit {
   examRandom = signal(true);
   examRandomAnswers = signal(false);
   examReviewMode = signal(true);
+  examForceRandom = signal(false);
   availableQuestionCount = signal(0);
 
   // Delete file
@@ -138,9 +139,10 @@ export class DeckDetailPage implements OnInit {
     this.examIsFileBased.set(true);
     this.examQuestionCount.set(file.questions?.length || 10);
     this.examFilter.set('All');
-    this.examRandom.set(true);
+    this.examRandom.set(false);
     this.examRandomAnswers.set(false);
     this.examReviewMode.set(true);
+    this.examForceRandom.set(false);
     this.updateAvailableCount();
     this.showExamModal.set(true);
   }
@@ -151,8 +153,9 @@ export class DeckDetailPage implements OnInit {
     this.examQuestionCount.set(20);
     this.examFilter.set('All');
     this.examRandom.set(true);
-    this.examRandomAnswers.set(false);
-    this.examReviewMode.set(true);
+    this.examRandomAnswers.set(true);
+    this.examReviewMode.set(false);
+    this.examForceRandom.set(true);
     this.updateAvailableCount();
     this.showExamModal.set(true);
   }
