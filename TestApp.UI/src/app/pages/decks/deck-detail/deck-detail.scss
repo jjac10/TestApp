@@ -1,0 +1,161 @@
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.page-header-left {
+  .back-link {
+    font-size: 13px;
+    color: var(--gray-500);
+    display: block;
+    margin-bottom: 4px;
+    &:hover { color: var(--primary); text-decoration: none; }
+  }
+  h1 { font-size: 24px; font-weight: 700; }
+}
+
+.page-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+  gap: 16px;
+  color: var(--gray-500);
+}
+
+.deck-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.file-card {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+}
+
+.file-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.disabled {
+  opacity: .4;
+  pointer-events: none;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.import-body {
+  margin: 16px 0;
+}
+
+.import-summary {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.import-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.import-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  font-size: 13px;
+
+  &.invalid { background: var(--danger-bg); }
+}
+
+.file-size {
+  color: var(--gray-400);
+  font-size: 12px;
+}
+
+.exam-options {
+  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.option-group {
+  label {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--gray-700);
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  input[type="number"] {
+    width: 100px;
+  }
+}
+
+.radio-group {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.radio-label, .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.option-info {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-top: 6px;
+}

@@ -45,6 +45,7 @@ public class DeckService : IDeckService
         return await _context.Decks
             .Where(d => d.Id == deckId && d.UserId == userId)
             .Include(d => d.Files)
+                .ThenInclude(f => f.Questions)
             .FirstOrDefaultAsync();
     }
 }

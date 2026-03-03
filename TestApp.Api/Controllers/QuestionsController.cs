@@ -20,9 +20,9 @@ public class QuestionsController : ControllerBase
     /// Obtiene preguntas para un examen de un mazo
     /// </summary>
     [HttpGet("deck/{deckId}/exam")]
-    public async Task<IActionResult> GetForExam(int deckId, [FromQuery] int count = 10, [FromQuery] QuestionFilter filter = QuestionFilter.All)
+    public async Task<IActionResult> GetForExam(int deckId, [FromQuery] int count = 10, [FromQuery] QuestionFilter filter = QuestionFilter.All, [FromQuery] bool random = true, [FromQuery] bool randomAnswers = false)
     {
-        var questions = await _questionService.GetQuestionsForExamAsync(deckId, count, filter);
+        var questions = await _questionService.GetQuestionsForExamAsync(deckId, count, filter, random, randomAnswers);
         return Ok(questions);
     }
 
@@ -30,9 +30,9 @@ public class QuestionsController : ControllerBase
     /// Obtiene preguntas para un examen de un archivo
     /// </summary>
     [HttpGet("file/{fileId}/exam")]
-    public async Task<IActionResult> GetFromFile(int fileId, [FromQuery] int count = 10, [FromQuery] QuestionFilter filter = QuestionFilter.All)
+    public async Task<IActionResult> GetFromFile(int fileId, [FromQuery] int count = 10, [FromQuery] QuestionFilter filter = QuestionFilter.All, [FromQuery] bool random = true, [FromQuery] bool randomAnswers = false)
     {
-        var questions = await _questionService.GetQuestionsFromFileAsync(fileId, count, filter);
+        var questions = await _questionService.GetQuestionsFromFileAsync(fileId, count, filter, random, randomAnswers);
         return Ok(questions);
     }
 
@@ -47,7 +47,7 @@ public class QuestionsController : ControllerBase
     }
 
     /// <summary>
-    /// Cuenta preguntas de un archivo según filtro
+    /// Cuenta preguntas de un archivo segï¿½n filtro
     /// </summary>
     [HttpGet("file/{fileId}/count")]
     public async Task<IActionResult> CountInFile(int fileId, [FromQuery] QuestionFilter filter = QuestionFilter.All)
@@ -57,7 +57,7 @@ public class QuestionsController : ControllerBase
     }
 
     /// <summary>
-    /// Cuenta preguntas de un mazo según filtro
+    /// Cuenta preguntas de un mazo segï¿½n filtro
     /// </summary>
     [HttpGet("deck/{deckId}/count")]
     public async Task<IActionResult> CountInDeck(int deckId, [FromQuery] QuestionFilter filter = QuestionFilter.All)

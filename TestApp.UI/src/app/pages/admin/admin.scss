@@ -1,0 +1,61 @@
+.admin-page {
+  max-width: 600px;
+
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+}
+
+.admin-section {
+  padding: 24px;
+
+  h2 {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+}
+
+.create-user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--gray-700);
+  }
+
+  input, select {
+    width: 100%;
+    padding: 10px 14px;
+  }
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.alert-success {
+  background: var(--success-bg);
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.alert-error {
+  background: var(--danger-bg);
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}

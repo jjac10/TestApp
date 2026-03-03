@@ -13,8 +13,8 @@ public enum QuestionFilter
 public interface IQuestionService
 {
     Task<int> ImportQuestionsAsync(int deckId, string fileName, List<QuestionImportDto> questions);
-    Task<List<Question>> GetQuestionsForExamAsync(int deckId, int count, QuestionFilter filter);
-    Task<List<Question>> GetQuestionsFromFileAsync(int fileId, int count, QuestionFilter filter);
+    Task<List<Question>> GetQuestionsForExamAsync(int deckId, int count, QuestionFilter filter, bool random = true, bool randomAnswers = false);
+    Task<List<Question>> GetQuestionsFromFileAsync(int fileId, int count, QuestionFilter filter, bool random = true, bool randomAnswers = false);
     Task<List<Question>> GetAllQuestionsFromFileOrderedAsync(int fileId);
     Task RecordAnswerAsync(int questionId, char userAnswer);
     Task DeleteFileAsync(int fileId);
@@ -26,12 +26,12 @@ public interface IQuestionService
     Task DeleteQuestionAsync(int questionId);
     
     /// <summary>
-    /// Cuenta las preguntas de un archivo según el filtro
+    /// Cuenta las preguntas de un archivo segï¿½n el filtro
     /// </summary>
     Task<int> CountQuestionsInFileAsync(int fileId, QuestionFilter filter);
     
     /// <summary>
-    /// Cuenta las preguntas de un mazo según el filtro
+    /// Cuenta las preguntas de un mazo segï¿½n el filtro
     /// </summary>
     Task<int> CountQuestionsInDeckAsync(int deckId, QuestionFilter filter);
 }

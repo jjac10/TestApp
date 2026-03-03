@@ -18,7 +18,7 @@ public class QuestionService : IQuestionService
     {
         if (questions == null || questions.Count == 0)
         {
-            throw new InvalidOperationException("El archivo no contiene preguntas válidas");
+            throw new InvalidOperationException("El archivo no contiene preguntas vï¿½lidas");
         }
 
         var questionFile = new QuestionFile
@@ -44,7 +44,7 @@ public class QuestionService : IQuestionService
         return questionFile.Questions.Count;
     }
 
-    public async Task<List<Question>> GetQuestionsForExamAsync(int deckId, int count, QuestionFilter filter)
+    public async Task<List<Question>> GetQuestionsForExamAsync(int deckId, int count, QuestionFilter filter, bool random = true, bool randomAnswers = false)
     {
         var query = _context.Questions
             .Include(q => q.Answers)
@@ -52,16 +52,19 @@ public class QuestionService : IQuestionService
 
         query = ApplyFilter(query, filter);
 
-        // Cargar a memoria y luego ordenar aleatoriamente
         var questions = await query.ToListAsync();
-        
-        return questions
-            .OrderBy(_ => Random.Shared.Next())
-            .Take(count)
-            .ToList();
+
+        var result = random
+            ? questions.OrderBy(_ => Random.Shared.Next()).Take(count).ToList()
+            : questions.OrderBy(q => q.Number).Take(count).ToList();
+
+        if (randomAnswers)
+            result.ForEach(ShuffleAnswers);
+
+        return result;
     }
 
-    public async Task<List<Question>> GetQuestionsFromFileAsync(int fileId, int count, QuestionFilter filter)
+    public async Task<List<Question>> GetQuestionsFromFileAsync(int fileId, int count, QuestionFilter filter, bool random = true, bool randomAnswers = false)
     {
         var query = _context.Questions
             .Include(q => q.Answers)
@@ -69,13 +72,16 @@ public class QuestionService : IQuestionService
 
         query = ApplyFilter(query, filter);
 
-        // Cargar a memoria y luego ordenar aleatoriamente
         var questions = await query.ToListAsync();
-        
-        return questions
-            .OrderBy(_ => Random.Shared.Next())
-            .Take(count)
-            .ToList();
+
+        var result = random
+            ? questions.OrderBy(_ => Random.Shared.Next()).Take(count).ToList()
+            : questions.OrderBy(q => q.Number).Take(count).ToList();
+
+        if (randomAnswers)
+            result.ForEach(ShuffleAnswers);
+
+        return result;
     }
 
     public async Task<List<Question>> GetAllQuestionsFromFileOrderedAsync(int fileId)
@@ -140,6 +146,53 @@ public class QuestionService : IQuestionService
             QuestionFilter.Failed => query.Where(q => q.Answers.Any(a => !a.IsCorrect)),
             _ => query
         };
+    }
+
+    /// <summary>
+    /// Mezcla las opciones A/B/C/D de una pregunta y actualiza CorrectAnswer para que siga apuntando a la opciÃ³n correcta.
+    /// </summary>
+    private static void ShuffleAnswers(Question q)
+    {
+        var options = new List<(char Letter, string Text)>
+        {
+            ('A', q.OptionA),
+            ('B', q.OptionB),
+            ('C', q.OptionC),
+            ('D', q.OptionD)
+        };
+
+        // Fisher-Yates shuffle
+        for (int i = options.Count - 1; i > 0; i--)
+        {
+            int j = Random.Shared.Next(i + 1);
+            (options[i], options[j]) = (options[j], options[i]);
+        }
+
+        // Find where the correct answer ended up
+        var correctText = q.CorrectAnswer switch
+        {
+            'A' => q.OptionA,
+            'B' => q.OptionB,
+            'C' => q.OptionC,
+            'D' => q.OptionD,
+            _ => q.OptionA
+        };
+
+        q.OptionA = options[0].Text;
+        q.OptionB = options[1].Text;
+        q.OptionC = options[2].Text;
+        q.OptionD = options[3].Text;
+
+        // Update correct answer to new position
+        char[] letters = { 'A', 'B', 'C', 'D' };
+        for (int i = 0; i < options.Count; i++)
+        {
+            if (options[i].Text == correctText)
+            {
+                q.CorrectAnswer = letters[i];
+                break;
+            }
+        }
     }
 
     public async Task UpdateCorrectAnswerAsync(int questionId, char newCorrectAnswer)

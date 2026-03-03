@@ -1,0 +1,106 @@
+<div class="page-header">
+  <h1>📚 Mis Convocatorias</h1>
+  <div class="create-deck">
+    <input
+      type="text"
+      placeholder="Nueva convocatoria..."
+      [ngModel]="newDeckName()"
+      (ngModelChange)="newDeckName.set($event)"
+      (keyup.enter)="createDeck()"
+    />
+    <button class="btn-primary btn-icon" (click)="createDeck()" [disabled]="creating() || !newDeckName().trim()">
+      @if (creating()) {
+        <span class="loading-spinner"></span>
+      } @else {
+        ➕ Crear
+      }
+    </button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="toast toast-error">{{ error() }}</div>
+}
+
+@if (loading()) {
+  <div class="loading-center">
+    <div class="loading-spinner"></div>
+    <p>Cargando convocatorias...</p>
+  </div>
+} @else if (decks().length === 0) {
+  <div class="empty-state">
+    <div class="empty-icon">📭</div>
+    <h3>No hay convocatorias</h3>
+    <p>Crea tu primera convocatoria para empezar</p>
+  </div>
+} @else {
+  <div class="deck-grid">
+    @for (deck of decks(); track deck.id) {
+      <a [routerLink]="['/decks', deck.id]" class="deck-card card">
+        <div class="deck-card-header">
+          <h3>{{ deck.name }}</h3>
+          <button class="btn-danger btn-sm" (click)="openDeleteModal(deck, $event)" title="Eliminar">
+            🗑️
+          </button>
+        </div>
+        <div class="deck-card-stats">
+          <div class="deck-stat">
+            <span class="deck-stat-value">{{ deck.files?.length || 0 }}</span>
+            <span class="deck-stat-label">Temas</span>
+          </div>
+          <div class="deck-stat">
+            <span class="deck-stat-value">{{ getTotalQuestions(deck) }}</span>
+            <span class="deck-stat-label">Preguntas</span>
+          </div>
+        </div>
+        <div class="deck-card-footer">
+          <span class="deck-date">{{ deck.createdAt | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </a>
+    }
+  </div>
+}
+
+<!-- Delete Modal -->
+@if (showDeleteModal() && deckToDelete()) {
+  <div class="modal-backdrop" (click)="cancelDelete()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h2>🗑️ Eliminar Convocatoria</h2>
+      <p style="margin: 16px 0;">
+        ¿Estás seguro de que quieres eliminar <strong>{{ deckToDelete()!.name }}</strong>?
+      </p>
+
+      @if ((deckToDelete()!.files?.length || 0) > 0) {
+        <div class="alert alert-warning">
+          ⚠️ Esta convocatoria tiene {{ deckToDelete()!.files!.length }} tema(s).
+          Se eliminarán todos los temas, preguntas y respuestas.
+          <br><br>
+          Escribe el nombre de la convocatoria para confirmar:
+        </div>
+        <input
+          type="text"
+          class="confirm-input"
+          [placeholder]="deckToDelete()!.name"
+          [ngModel]="deleteConfirmName()"
+          (ngModelChange)="deleteConfirmName.set($event)"
+          style="width: 100%; margin: 12px 0;"
+        />
+      }
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cancelDelete()">Cancelar</button>
+        <button
+          class="btn-danger"
+          (click)="confirmDelete()"
+          [disabled]="deleting() || ((deckToDelete()!.files?.length || 0) > 0 && deleteConfirmName() !== deckToDelete()!.name)"
+        >
+          @if (deleting()) {
+            <span class="loading-spinner"></span>
+          } @else {
+            Eliminar
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
