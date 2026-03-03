@@ -69,14 +69,22 @@ builder.Services.AddControllers()
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// CORS configurado para producción y desarrollo
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://localhost:5000", "https://localhost:5001")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        policy.WithOrigins(
+            "http://localhost:4200",           // Angular dev
+            "http://localhost:5000",           // Local
+            "https://localhost:5001",          // Local HTTPS
+            "https://testapp-296.pages.dev",   // Cloudflare Pages
+            "https://testapp-api-vaho.onrender.com" // Render API
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials();
     });
 });
 
@@ -114,14 +122,13 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Swagger habilitado en producción para verificar endpoints
+app.UseSwagger();
+app.UseSwaggerUI();
 
+// CORS debe ir ANTES de Authentication y Authorization
 app.UseCors("AllowFrontend");
-app.UseAuthentication(); // ¡Antes de Authorization!
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
