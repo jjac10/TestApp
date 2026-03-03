@@ -15,9 +15,10 @@ public class DeckService : IDeckService
 
     public async Task<List<Deck>> GetAllDecksAsync(string userId)
     {
+        //TODO: Devolverl files ordenados por CreatedAt
         return await _context.Decks
             .Where(d => d.UserId == userId)
-            .Include(d => d.Files)
+            .Include(d => d.Files.OrderBy(o => o.ImportedAt))
                 .ThenInclude(f => f.Questions)
             .ToListAsync();
     }

@@ -11,32 +11,8 @@ public class AppDbContext : IdentityDbContext<User>
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<Answer> Answers => Set<Answer>();
 
-    public string DbPath { get; }
-
-    public AppDbContext()
-    {
-        var folder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "TestApp");
-        Directory.CreateDirectory(folder);
-        DbPath = Path.Combine(folder, "examenes.db");
-    }
-
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
-        var folder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "TestApp");
-        Directory.CreateDirectory(folder);
-        DbPath = Path.Combine(folder, "examenes.db");
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder options)
-    {
-        if (!options.IsConfigured)
-        {
-            options.UseSqlite($"Data Source={DbPath}");
-        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System.IO;
+using System.Windows;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TestApp.Core.Data;
 using TestApp.Core.Models;
@@ -56,7 +58,17 @@ public partial class App : Application
     private static void ConfigureServices(IServiceCollection services)
     {
         // Data
-        services.AddDbContext<AppDbContext>(ServiceLifetime.Transient);
+        // Mantener SQLite para el Desktop
+        services.AddDbContext<AppDbContext>(options =>
+        {
+            var folder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "TestApp");
+            Directory.CreateDirectory(folder);
+            var dbPath = Path.Combine(folder, "examenes.db");
+
+            options.UseSqlite($"Data Source={dbPath}");
+        });
 
         // Services
         services.AddTransient<IDeckService, DeckService>();

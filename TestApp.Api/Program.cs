@@ -10,17 +10,12 @@ using TestApp.Core.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database - usar /app/data en Docker/producción, LocalAppData en desarrollo
-var dbFolder = builder.Environment.IsProduction()
-    ? "/app/data"
-    : Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "TestApp");
-Directory.CreateDirectory(dbFolder);
-var dbPath = Path.Combine(dbFolder, "examenes.db");
+// Database - PostgreSQL
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite($"Data Source={dbPath}"));
+    options.UseNpgsql(connectionString));
 
 // Identity
 builder.Services.AddIdentity<User, IdentityRole>(options =>
@@ -96,7 +91,9 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    
+    // Aplicar migraciones automáticamente
+    db.Database.Migrate();
 
     // Crear roles por defecto
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
