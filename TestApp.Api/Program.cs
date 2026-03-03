@@ -10,10 +10,12 @@ using TestApp.Core.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database
-var dbFolder = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-    "TestApp");
+// Database - usar /app/data en Docker/producciÃ³n, LocalAppData en desarrollo
+var dbFolder = builder.Environment.IsProduction()
+    ? "/app/data"
+    : Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "TestApp");
 Directory.CreateDirectory(dbFolder);
 var dbPath = Path.Combine(dbFolder, "examenes.db");
 
@@ -70,7 +72,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS configurado para producción y desarrollo
+// CORS configurado para producciÃ³n y desarrollo
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -122,7 +124,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-// Swagger habilitado en producción para verificar endpoints
+// Swagger habilitado en producciÃ³n para verificar endpoints
 app.UseSwagger();
 app.UseSwaggerUI();
 

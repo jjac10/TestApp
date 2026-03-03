@@ -32,7 +32,11 @@ export class LoginPage {
       },
       error: (err) => {
         this.loading.set(false);
-        this.error.set(err.error?.message || err.error || 'Credenciales incorrectas');
+        if (err.status === 0) {
+          this.error.set('No se pudo conectar con el servidor. Inténtalo más tarde.');
+        } else {
+          this.error.set(err.error?.message || (typeof err.error === 'string' ? err.error : 'Credenciales incorrectas'));
+        }
       }
     });
   }
